@@ -1,0 +1,91 @@
+[
+  {
+    "name": "Marine Drive",
+    "city": "Mumbai",
+    "style": "Street Photography",
+    "bestTime": "Sunrise",
+    "safety": "High",
+    "description": "Sea-facing promenade with skyline views."
+  },
+
+  {
+    "name": "Kharghar Hills",
+    "city": "Navi Mumbai",
+    "style": "Landscape Photography",
+    "bestTime": "Sunrise",
+    "safety": "Medium",
+    "description": "Panoramic hilltop views of Navi Mumbai."
+  },
+
+  {
+    "name": "CST",
+    "city": "Mumbai",
+    "style": "Street Photography",
+    "bestTime": "Morning",
+    "safety": "High",
+    "description": "Historic railway station with Gothic architecture and busy commuter activity."
+  },
+
+  {
+    "name": "Bandra Fort",
+    "city": "Mumbai",
+    "style": "Portrait Photography",
+    "bestTime": "Sunset",
+    "safety": "High",
+    "description": "Historic fort with sea views and excellent portrait opportunities."
+  },
+
+  {
+    "name": "Gateway of India",
+    "city": "Mumbai",
+    "style": "Architecture Photography",
+    "bestTime": "Morning",
+    "safety": "High",
+    "description": "Iconic monument ideal for architecture and travel photography."
+  },
+
+  {
+    "name": "Worli Sea Face",
+    "city": "Mumbai",
+    "style": "Landscape Photography",
+    "bestTime": "Sunset",
+    "safety": "High",
+    "description": "Coastal viewpoint with dramatic skies and cityscape opportunities."
+  },
+
+  {
+    "name": "Palm Beach Road",
+    "city": "Navi Mumbai",
+    "style": "Landscape Photography",
+    "bestTime": "Sunset",
+    "safety": "High",
+    "description": "Long scenic road with waterfront views and beautiful evening light."
+  },
+
+  {
+    "name": "Jewel of Navi Mumbai",
+    "city": "Navi Mumbai",
+    "style": "Portrait Photography",
+    "bestTime": "Golden Hour",
+    "safety": "High",
+    "description": "Lakefront park with reflections and portrait-friendly scenery."
+  },
+
+  {
+    "name": "Sagar Vihar",
+    "city": "Navi Mumbai",
+    "style": "Landscape Photography",
+    "bestTime": "Sunrise",
+    "safety": "High",
+    "description": "Waterfront promenade offering creek views and sunrise photography."
+  },
+
+  {
+    "name": "Parsik Hill View Point",
+    "city": "Navi Mumbai",
+    "style": "Landscape Photography",
+    "bestTime": "Blue Hour",
+    "safety": "Medium",
+    "description": "Elevated viewpoint overlooking the Navi Mumbai skyline."
+  }
+]

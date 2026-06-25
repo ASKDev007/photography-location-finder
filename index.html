@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Photography Location Finder</title>
+</head>
+
+<body>
+
+    <h1>Photography Location Finder</h1>
+
+    <p>Find photography locations effortlessly.</p>
+
+    <select id="styleSelect">
+    <option>Street Photography</option>
+    <option>Landscape Photography</option>
+    <option>Portrait Photography</option>
+    <option>Architecture Photography</option>
+    </select>
+
+    <input
+    type="text"
+    id="searchInput"
+    placeholder="Describe your ideal shoot..."
+>
+
+<button onclick="showSelection()">
+    Find Locations
+</button>
+
+<button onclick="clearSearch()">
+    Clear Search
+</button>
+
+    <div id="results"></div>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>
