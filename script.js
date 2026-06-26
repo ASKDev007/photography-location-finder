@@ -29,10 +29,12 @@ async function showSelection() {
             location.style.toLowerCase().includes(selectedStyle);
 
         let matchesSearch =
-            searchText === "" ||
-            location.style.toLowerCase().includes(searchText) ||
-            location.city.toLowerCase().includes(searchText) ||
-            location.description.toLowerCase().includes(searchText);
+    searchText === "" ||
+    location.style.toLowerCase().includes(searchText) ||
+    location.city.toLowerCase().includes(searchText) ||
+    location.description.toLowerCase().includes(searchText) ||
+    location.bestTime.toLowerCase().includes(searchText) ||
+    location.safety.toLowerCase().includes(searchText);
 
         return matchesStyle && matchesSearch;
 
