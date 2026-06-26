@@ -1,38 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Photography Location Finder</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <h1>Photography Location Finder</h1>
+    <section class="hero">
+        <p class="hero-eyebrow">Mumbai & Navi Mumbai</p>
+        <h1 class="hero-title">Find your next<br><span>perfect shot.</span></h1>
+        <p class="hero-subtitle">Discover photography locations curated for every style — from golden hour landscapes to gritty street scenes.</p>
+    </section>
 
-    <p>Find photography locations effortlessly.</p>
+    <section class="search-section">
+        <div class="search-strip">
+            <select class="style-select" id="styleSelect">
+                <option>Street Photography</option>
+                <option>Landscape Photography</option>
+                <option>Portrait Photography</option>
+                <option>Architecture Photography</option>
+                <option value="">All Styles</option>
+            </select>
+            <div class="search-divider"></div>
+            <input
+                class="search-input"
+                type="text"
+                id="searchInput"
+                placeholder="City, time of day, vibe..."
+            >
+            <button class="clear-btn" onclick="clearSearch()">Clear</button>
+            <button class="search-btn" onclick="showSelection()">Find Locations</button>
+        </div>
+    </section>
 
-    <select id="styleSelect">
-    <option>Street Photography</option>
-    <option>Landscape Photography</option>
-    <option>Portrait Photography</option>
-    <option>Architecture Photography</option>
-    </select>
-
-    <input
-    type="text"
-    id="searchInput"
-    placeholder="Describe your ideal shoot..."
->
-
-<button onclick="showSelection()">
-    Find Locations
-</button>
-
-<button onclick="clearSearch()">
-    Clear Search
-</button>
-
-    <div id="results"></div>
-
+    <section class="results-section">
+        <div id="results"></div>
+    </section>
 
     <script src="script.js"></script>
 
