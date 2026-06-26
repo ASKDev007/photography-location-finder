@@ -4,35 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Photography Location Finder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
     <section class="hero">
-        <p class="hero-eyebrow">Mumbai & Navi Mumbai</p>
-        <h1 class="hero-title">Find your next<br><span>perfect shot.</span></h1>
-        <p class="hero-subtitle">Discover photography locations curated for every style — from golden hour landscapes to gritty street scenes.</p>
+        <p class="hero-eyebrow">Mumbai & Navi Mumbai — Photography Guide</p>
+        <h1 class="hero-title">Every frame starts<br>with a <em>place.</em></h1>
+        <p class="hero-subtitle">Curated locations for photographers — sorted by style, light, and feel.</p>
     </section>
 
     <section class="search-section">
         <div class="search-strip">
             <select class="style-select" id="styleSelect">
+                <option value="">All Styles</option>
                 <option>Street Photography</option>
                 <option>Landscape Photography</option>
                 <option>Portrait Photography</option>
                 <option>Architecture Photography</option>
-                <option value="">All Styles</option>
             </select>
             <div class="search-divider"></div>
             <input
                 class="search-input"
                 type="text"
                 id="searchInput"
-                placeholder="City, time of day, vibe..."
+                placeholder="Search by city, time, or vibe..."
             >
             <button class="clear-btn" onclick="clearSearch()">Clear</button>
-            <button class="search-btn" onclick="showSelection()">Find Locations</button>
+            <button class="search-btn" onclick="showSelection()">Search</button>
         </div>
     </section>
 
