@@ -90,6 +90,10 @@ async function showSelection() {
         // Insert card immediately with placeholder
         const card = document.createElement("div");
         card.className = "location-card";
+        card.style.cursor = "pointer";
+        card.onclick = () => {
+            window.open(`https://www.google.com/maps?q=${location.latitude},${location.longitude}`, '_blank');
+        };
         card.innerHTML = `
             <div class="card-image-wrapper">
                 <div class="card-image-placeholder"></div>
