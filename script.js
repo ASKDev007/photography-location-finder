@@ -118,7 +118,11 @@ async function showSelection() {
         grid.appendChild(card);
 
         // Fetch image and swap in
-        getUnsplashImage(location.name, location.city).then(imageUrl => {
+        const resolveImage = location.image_url
+    ? Promise.resolve(location.image_url)
+    : getUnsplashImage(location.name, location.city);
+
+resolveImage.then(imageUrl => {
             const wrapper = card.querySelector(".card-image-wrapper");
             if (imageUrl) {
                 wrapper.innerHTML = `<img class="card-image" src="${imageUrl}" alt="${location.name}" loading="lazy">`;
