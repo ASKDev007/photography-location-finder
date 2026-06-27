@@ -2,28 +2,6 @@ const SUPABASE_URL = "https://ejixhprqrgrpmggfrdyq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_EI_5JB62X3W91Deq2w7HoQ_Daqf_mE5";
 const UNSPLASH_KEY = "Jlr46aClQ1a6d0wCt6UI8o27KhnH2qiZj-ZAI97JsGo";
 
-// ─── Mode toggle ───────────────────────────────────────────
-function switchMode(mode) {
-    const filterStrip = document.getElementById("filterStrip");
-    const aiStrip = document.getElementById("aiStrip");
-    const filterBtn = document.getElementById("filterModeBtn");
-    const aiBtn = document.getElementById("aiModeBtn");
-
-    if (mode === "filter") {
-        filterStrip.classList.remove("hidden");
-        aiStrip.classList.add("hidden");
-        filterBtn.classList.add("active");
-        aiBtn.classList.remove("active");
-    } else {
-        filterStrip.classList.add("hidden");
-        aiStrip.classList.remove("hidden");
-        aiBtn.classList.add("active");
-        filterBtn.classList.remove("active");
-    }
-
-    clearSearch();
-}
-
 // ─── Unsplash ──────────────────────────────────────────────
 async function getUnsplashImage(locationName, city) {
     const query = encodeURIComponent(`${locationName} ${city} photography`);
@@ -50,7 +28,7 @@ async function fetchAllLocations() {
 }
 
 // ─── Render cards ──────────────────────────────────────────
-function renderCards(matchingLocations, aiExplanation = null) {
+function renderCards(matchingLocations) {
     const safetyClass = (safety) => {
         if (safety === "High") return "safety-high";
         if (safety === "Medium") return "safety-medium";
@@ -66,26 +44,16 @@ function renderCards(matchingLocations, aiExplanation = null) {
         return;
     }
 
-    let explanationHTML = "";
-    if (aiExplanation) {
-        explanationHTML = `
-            <div class="ai-explanation">
-                <button class="ai-explanation-toggle" onclick="toggleExplanation()">Why these locations? ↓</button>
-                <p class="ai-explanation-text hidden" id="aiExplanationText">${aiExplanation}</p>
-            </div>
-        `;
-    }
-
     document.getElementById("results").innerHTML = `
         <div class="results-header">
             <span class="results-title">Locations</span>
             <span class="results-count">${matchingLocations.length} found</span>
         </div>
-        ${explanationHTML}
         <div class="cards-grid" id="cardsGrid"></div>
     `;
 
     const grid = document.getElementById("cardsGrid");
+    const user = localStorage.getItem("sb_user");
 
     for (const location of matchingLocations) {
         const card = document.createElement("div");
@@ -113,6 +81,7 @@ function renderCards(matchingLocations, aiExplanation = null) {
                         <span class="card-meta-value ${safetyClass(location.safety)}">${location.safety}</span>
                     </div>
                 </div>
+                ${user ? `<button class="save-btn" onclick="saveLocation(event, ${location.id})">♥ Save</button>` : ""}
             </div>
         `;
         grid.appendChild(card);
@@ -129,19 +98,6 @@ function renderCards(matchingLocations, aiExplanation = null) {
                 wrapper.innerHTML = `<div class="card-image-placeholder no-image">No image available</div>`;
             }
         });
-    }
-}
-
-// ─── Toggle AI explanation ─────────────────────────────────
-function toggleExplanation() {
-    const text = document.getElementById("aiExplanationText");
-    const btn = document.querySelector(".ai-explanation-toggle");
-    if (text.classList.contains("hidden")) {
-        text.classList.remove("hidden");
-        btn.textContent = "Why these locations? ↑";
-    } else {
-        text.classList.add("hidden");
-        btn.textContent = "Why these locations? ↓";
     }
 }
 
@@ -171,65 +127,109 @@ async function showSelection() {
     renderCards(matchingLocations);
 }
 
-// ─── AI search ─────────────────────────────────────────────
-async function runAISearch() {
-    const query = document.getElementById("aiSearchInput").value.trim();
-    if (!query) return;
+// ─── Auth ──────────────────────────────────────────────────
+function openAuth() {
+    document.getElementById("authModal").classList.remove("hidden");
+}
 
-    document.getElementById("results").innerHTML = `
-        <div class="ai-loading">
-            <p>Finding the best locations for you...</p>
-        </div>
-    `;
+function closeAuth() {
+    document.getElementById("authModal").classList.add("hidden");
+    document.getElementById("authMessage").textContent = "";
+}
 
-    const locations = await fetchAllLocations();
+async function signUp() {
+    const email = document.getElementById("authEmail").value;
+    const password = document.getElementById("authPassword").value;
 
-    const locationSummary = locations.map(l =>
-        `ID:${l.id} | ${l.name} | ${l.city} | ${l.style} | Best Time: ${l.bestTime} | Safety: ${l.safety} | ${l.description}`
-    ).join("\n");
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_KEY
+        },
+        body: JSON.stringify({ email, password })
+    });
 
-    const prompt = `You are a photography location expert. A photographer is looking for locations with this request: "${query}"
+    const data = await res.json();
+    if (data.user) {
+        document.getElementById("authMessage").textContent = "Account created! Check your email to confirm.";
+    } else {
+        document.getElementById("authMessage").textContent = data.msg || "Something went wrong.";
+    }
+}
 
-Here are all available locations:
-${locationSummary}
+async function signIn() {
+    const email = document.getElementById("authEmail").value;
+    const password = document.getElementById("authPassword").value;
 
-Return a JSON object with exactly this structure, no extra text, no markdown:
-{
-  "ids": [list of matching location IDs as numbers, best matches first, max 6],
-  "explanation": "one sentence explanation only if the query is complex or specific, otherwise leave as empty string"
-}`;
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_KEY
+        },
+        body: JSON.stringify({ email, password })
+    });
 
-    try {
-        const aiResponse = await fetch("/api/search", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt })
-        });
+    const data = await res.json();
+    if (data.access_token) {
+        localStorage.setItem("sb_token", data.access_token);
+        localStorage.setItem("sb_user", JSON.stringify(data.user));
+        closeAuth();
+        updateAuthUI(data.user);
+    } else {
+        document.getElementById("authMessage").textContent = data.error_description || "Sign in failed.";
+    }
+}
 
-        const aiData = await aiResponse.json();
-        const raw = aiData.text.replace(/```json|```/g, "").trim();
-        const parsed = JSON.parse(raw);
+function updateAuthUI(user) {
+    const btn = document.getElementById("heroAuthBtn");
+    if (user) {
+        btn.textContent = `${user.email.split("@")[0]} — Sign Out`;
+        btn.onclick = signOut;
+    } else {
+        btn.textContent = "Sign In";
+        btn.onclick = openAuth;
+    }
+}
 
-        const matchedLocations = parsed.ids
-            .map(id => locations.find(l => l.id === id))
-            .filter(Boolean);
+function signOut() {
+    localStorage.removeItem("sb_token");
+    localStorage.removeItem("sb_user");
+    updateAuthUI(null);
+}
 
-        renderCards(matchedLocations, parsed.explanation || null);
+// ─── Save location ─────────────────────────────────────────
+async function saveLocation(event, locationId) {
+    event.stopPropagation();
+    const token = localStorage.getItem("sb_token");
+    if (!token) { openAuth(); return; }
 
-    } catch (err) {
-        document.getElementById("results").innerHTML = `
-            <div class="empty-state">
-                <p>AI search failed. Try the filter search instead.</p>
-            </div>
-        `;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_locations`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ location_id: locationId })
+    });
+
+    if (res.ok) {
+        event.target.textContent = "♥ Saved";
+        event.target.style.color = "#5a7a5a";
     }
 }
 
 // ─── Clear ─────────────────────────────────────────────────
 function clearSearch() {
-    const searchInput = document.getElementById("searchInput");
-    const aiSearchInput = document.getElementById("aiSearchInput");
-    if (searchInput) searchInput.value = "";
-    if (aiSearchInput) aiSearchInput.value = "";
+    document.getElementById("searchInput").value = "";
     document.getElementById("results").innerHTML = "";
 }
+
+// ─── On load ───────────────────────────────────────────────
+window.addEventListener("load", () => {
+    const user = localStorage.getItem("sb_user");
+    if (user) updateAuthUI(JSON.parse(user));
+});
+

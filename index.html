@@ -12,10 +12,25 @@
 
 <body>
 
+    <!-- Auth Modal -->
+    <div class="auth-modal hidden" id="authModal">
+        <div class="auth-box">
+            <button class="auth-close" onclick="closeAuth()">✕</button>
+            <h2 class="auth-title">Join the community</h2>
+            <p class="auth-subtitle">Save your favourite locations.</p>
+            <input class="auth-input" type="email" id="authEmail" placeholder="Email">
+            <input class="auth-input" type="password" id="authPassword" placeholder="Password">
+            <button class="auth-btn" onclick="signUp()">Sign Up</button>
+            <button class="auth-btn secondary" onclick="signIn()">Sign In</button>
+            <p class="auth-message" id="authMessage"></p>
+        </div>
+    </div>
+
     <section class="hero">
         <p class="hero-eyebrow">Mumbai & Navi Mumbai — Photography Guide</p>
         <h1 class="hero-title">Every frame starts<br>with a <em>place.</em></h1>
         <p class="hero-subtitle">Curated locations for photographers — sorted by style, light, and feel.</p>
+        <button class="hero-auth-btn" onclick="openAuth()" id="heroAuthBtn">Sign In</button>
     </section>
 
     <section class="search-section">
