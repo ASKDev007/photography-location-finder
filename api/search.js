@@ -18,10 +18,17 @@ export default async function handler(req, res) {
         );
 
         const data = await response.json();
+        console.log("Gemini response:", JSON.stringify(data));
+
+        if (!data.candidates || data.candidates.length === 0) {
+            return res.status(500).json({ error: "No candidates returned", raw: data });
+        }
+
         const text = data.candidates[0].content.parts[0].text;
         return res.status(200).json({ text });
 
     } catch (err) {
-        return res.status(500).json({ error: "AI search failed" });
+        console.log("Error:", err.message);
+        return res.status(500).json({ error: err.message });
     }
 }
