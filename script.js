@@ -1,5 +1,23 @@
 const SUPABASE_URL = "https://ejixhprqrgrpmggfrdyq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_EI_5JB62X3W91Deq2w7HoQ_Daqf_mE5";
+const UNSPLASH_KEY = "Jlr46aClQ1a6d0wCt6UI8o27KhnH2qiZj-ZAI97JsGo";
+
+async function getUnsplashImage(locationName, city) {
+    const query = encodeURIComponent(`${locationName} ${city} photography`);
+    const response = await fetch(
+        `https://api.unsplash.com/search/photos?query=${query}&per_page=1&orientation=landscape`,
+        {
+            headers: {
+                "Authorization": `Client-ID ${UNSPLASH_KEY}`
+            }
+        }
+    );
+    const data = await response.json();
+    if (data.results && data.results.length > 0) {
+        return data.results[0].urls.regular;
+    }
+    return null;
+}
 
 async function showSelection() {
 
@@ -29,12 +47,12 @@ async function showSelection() {
             location.style.toLowerCase().includes(selectedStyle);
 
         let matchesSearch =
-    searchText === "" ||
-    location.style.toLowerCase().includes(searchText) ||
-    location.city.toLowerCase().includes(searchText) ||
-    location.description.toLowerCase().includes(searchText) ||
-    location.bestTime.toLowerCase().includes(searchText) ||
-    location.safety.toLowerCase().includes(searchText);
+            searchText === "" ||
+            location.style.toLowerCase().includes(searchText) ||
+            location.city.toLowerCase().includes(searchText) ||
+            location.description.toLowerCase().includes(searchText) ||
+            location.bestTime.toLowerCase().includes(searchText) ||
+            location.safety.toLowerCase().includes(searchText);
 
         return matchesStyle && matchesSearch;
 
@@ -46,24 +64,37 @@ async function showSelection() {
         return "safety-low";
     };
 
-    let output = `
-        <div class="results-header">
-            <span class="results-title">Locations</span>
-            <span class="results-count">${matchingLocations.length} found</span>
-        </div>
-        <div class="cards-grid">
-    `;
-
     if (matchingLocations.length === 0) {
-        output = `
+        document.getElementById("results").innerHTML = `
             <div class="empty-state">
                 <p>No locations match your search. Try a different style or city.</p>
             </div>
         `;
-    } else {
-        matchingLocations.forEach(location => {
-            output += `
-            <div class="location-card">
+        return;
+    }
+
+    // Show loading state
+    document.getElementById("results").innerHTML = `
+        <div class="results-header">
+            <span class="results-title">Locations</span>
+            <span class="results-count">${matchingLocations.length} found</span>
+        </div>
+        <div class="cards-grid" id="cardsGrid"></div>
+    `;
+
+    // Render cards with images asynchronously
+    const grid = document.getElementById("cardsGrid");
+
+    for (const location of matchingLocations) {
+
+        // Insert card immediately with placeholder
+        const card = document.createElement("div");
+        card.className = "location-card";
+        card.innerHTML = `
+            <div class="card-image-wrapper">
+                <div class="card-image-placeholder"></div>
+            </div>
+            <div class="card-body">
                 <span class="card-style-tag">${location.style}</span>
                 <h3 class="card-name">${location.name}</h3>
                 <p class="card-city">${location.city}</p>
@@ -79,12 +110,19 @@ async function showSelection() {
                     </div>
                 </div>
             </div>
-            `;
-        });
-        output += `</div>`;
-    }
+        `;
+        grid.appendChild(card);
 
-    document.getElementById("results").innerHTML = output;
+        // Fetch image and swap in
+        getUnsplashImage(location.name, location.city).then(imageUrl => {
+            const wrapper = card.querySelector(".card-image-wrapper");
+            if (imageUrl) {
+                wrapper.innerHTML = `<img class="card-image" src="${imageUrl}" alt="${location.name}" loading="lazy">`;
+            } else {
+                wrapper.innerHTML = `<div class="card-image-placeholder no-image">No image available</div>`;
+            }
+        });
+    }
 }
 
 function clearSearch() {
