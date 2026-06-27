@@ -19,7 +19,15 @@
     </section>
 
     <section class="search-section">
-        <div class="search-strip">
+
+        <!-- Mode toggle -->
+        <div class="mode-toggle">
+            <button class="mode-btn active" id="filterModeBtn" onclick="switchMode('filter')">Filter Search</button>
+            <button class="mode-btn" id="aiModeBtn" onclick="switchMode('ai')">AI Search</button>
+        </div>
+
+        <!-- Filter mode -->
+        <div class="search-strip" id="filterStrip">
             <select class="style-select" id="styleSelect">
                 <option value="">All Styles</option>
                 <option>Street Photography</option>
@@ -37,6 +45,19 @@
             <button class="clear-btn" onclick="clearSearch()">Clear</button>
             <button class="search-btn" onclick="showSelection()">Search</button>
         </div>
+
+        <!-- AI mode -->
+        <div class="search-strip ai-strip hidden" id="aiStrip">
+            <input
+                class="search-input"
+                type="text"
+                id="aiSearchInput"
+                placeholder="Describe your ideal shoot — quiet sunrise near water, golden hour portraits..."
+            >
+            <button class="clear-btn" onclick="clearSearch()">Clear</button>
+            <button class="search-btn" onclick="runAISearch()">Ask AI</button>
+        </div>
+
     </section>
 
     <section class="results-section">
