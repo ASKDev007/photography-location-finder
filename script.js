@@ -201,16 +201,13 @@ Return a JSON object with exactly this structure, no extra text, no markdown:
 
     try {
         const aiResponse = await fetch("/api/search", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt })
-});
-
-const aiData = await aiResponse.json();
-const raw = aiData.text.replace(/```json|```/g, "").trim();
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt })
+        });
 
         const aiData = await aiResponse.json();
-        const raw = aiData.content[0].text.replace(/```json|```/g, "").trim();
+        const raw = aiData.text.replace(/```json|```/g, "").trim();
         const parsed = JSON.parse(raw);
 
         const matchedLocations = parsed.ids
