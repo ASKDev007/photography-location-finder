@@ -74,6 +74,15 @@ body {
     color: #1a1a18;
 }
 
+.hero-location-count {
+    font-size: 11px;
+    color: #999890;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-top: 8px;
+    font-weight: 300;
+}
+
 /* Search strip */
 .search-section {
     max-width: 1000px;
