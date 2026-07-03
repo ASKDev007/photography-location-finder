@@ -147,7 +147,10 @@ async function signUp() {
             "Content-Type": "application/json",
             "apikey": SUPABASE_KEY
         },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ 
+    location_id: locationId,
+    user_id: JSON.parse(localStorage.getItem("sb_user")).id
+})
     });
 
     const data = await res.json();
