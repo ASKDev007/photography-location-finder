@@ -271,4 +271,9 @@ function clearSearch() {
 window.addEventListener("load", () => {
     const user = localStorage.getItem("sb_user");
     if (user) updateAuthUI(JSON.parse(user));
+
+    fetchAllLocations().then(locations => {
+        const count = locations.length;
+        document.getElementById("locationCount").textContent = `${count}+ locations across India`;
+    });
 });
