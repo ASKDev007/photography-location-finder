@@ -296,7 +296,7 @@ function drawWatermark() {
     const cities = "MUMBAI PUNE DELHI BANGALORE CHENNAI HYDERABAD KOCHI KOLKATA JAIPUR VARANASI AGRA SRINAGAR LEH SHIMLA MANALI AMRITSAR MUNNAR AHMEDABAD";
     
     ctx.font = "11px Georgia, serif";
-    ctx.fillStyle = "rgba(26, 26, 24, 0.18)";
+    ctx.fillStyle = "rgba(113, 113, 106, 0.09)";
     ctx.save();
     ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.rotate(-20 * Math.PI / 180);
