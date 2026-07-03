@@ -30,7 +30,10 @@
         <p class="hero-eyebrow">Mumbai & Navi Mumbai — Photography Guide</p>
         <h1 class="hero-title">Every frame starts<br>with a <em>place.</em></h1>
         <p class="hero-subtitle">Curated locations for photographers — sorted by style, light, and feel.</p>
-        <button class="hero-auth-btn" onclick="openAuth()" id="heroAuthBtn">Sign In</button>
+        <div class="hero-actions">
+            <button class="hero-auth-btn" onclick="openAuth()" id="heroAuthBtn">Sign In</button>
+            <button class="hero-auth-btn hidden" id="savedBtn" onclick="showSavedLocations()">My Locations</button>
+        </div>
     </section>
 
     <section class="search-section">

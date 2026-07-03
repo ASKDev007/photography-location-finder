@@ -505,3 +505,10 @@ body {
     border-color: #999890;
     color: #6b6558;
 }
+
+.hero-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+}

@@ -184,12 +184,15 @@ async function signIn() {
 
 function updateAuthUI(user) {
     const btn = document.getElementById("heroAuthBtn");
+    const savedBtn = document.getElementById("savedBtn");
     if (user) {
         btn.textContent = `${user.email.split("@")[0]} — Sign Out`;
         btn.onclick = signOut;
+        savedBtn.classList.remove("hidden");
     } else {
         btn.textContent = "Sign In";
         btn.onclick = openAuth;
+        savedBtn.classList.add("hidden");
     }
 }
 
@@ -222,8 +225,40 @@ async function saveLocation(event, locationId) {
 
     if (res.ok) {
         event.target.textContent = "♥ Saved";
-        event.target.style.color = "#5a7a5a";
+        event.target.style.color = "#1a5590";
     }
+}
+
+// ─── Saved locations view ──────────────────────────────────
+async function showSavedLocations() {
+    const token = localStorage.getItem("sb_token");
+    const user = JSON.parse(localStorage.getItem("sb_user"));
+
+    const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/saved_locations?select=location_id&user_id=eq.${user.id}`,
+        {
+            headers: {
+                "apikey": SUPABASE_KEY,
+                "Authorization": `Bearer ${token}`
+            }
+        }
+    );
+
+    const saved = await res.json();
+    const ids = saved.map(s => s.location_id);
+
+    if (ids.length === 0) {
+        document.getElementById("results").innerHTML = `
+            <div class="empty-state">
+                <p>You haven't saved any locations yet.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const allLocations = await fetchAllLocations();
+    const savedLocations = allLocations.filter(l => ids.includes(l.id));
+    renderCards(savedLocations);
 }
 
 // ─── Clear ─────────────────────────────────────────────────
