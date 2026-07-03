@@ -296,13 +296,13 @@ function drawWatermark() {
     const cities = "MUMBAI PUNE DELHI BANGALORE CHENNAI HYDERABAD KOCHI KOLKATA JAIPUR VARANASI AGRA SRINAGAR LEH SHIMLA MANALI AMRITSAR MUNNAR AHMEDABAD";
     
     ctx.font = "11px Georgia, serif";
-    ctx.fillStyle = "rgba(113, 113, 106, 0.09)";
+    ctx.fillStyle = "rgba(26, 26, 24, 0.04)";
     ctx.save();
     ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.rotate(-20 * Math.PI / 180);
     ctx.translate(-canvas.width, -canvas.height);
 
-    for (let y = -canvas.height; y < canvas.height * 2; y += 28) {
+    for (let y = -canvas.height; y < canvas.height * 2; y += 45) {
         for (let x = -canvas.width; x < canvas.width * 2; x += 320) {
             ctx.fillText(cities, x + (y % 2 === 0 ? 0 : 160), y);
         }
