@@ -277,3 +277,39 @@ window.addEventListener("load", () => {
         document.getElementById("locationCount").textContent = `${count}+ locations across India`;
     });
 });
+
+// ─── Background watermark ──────────────────────────────────
+function drawWatermark() {
+    const canvas = document.createElement("canvas");
+    canvas.style.position = "fixed";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    canvas.style.zIndex = "0";
+    canvas.style.pointerEvents = "none";
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    document.body.appendChild(canvas);
+
+    const ctx = canvas.getContext("2d");
+    const cities = "MUMBAI PUNE DELHI BANGALORE CHENNAI HYDERABAD KOCHI KOLKATA JAIPUR VARANASI AGRA SRINAGAR LEH SHIMLA MANALI AMRITSAR MUNNAR AHMEDABAD";
+    
+    ctx.font = "11px Georgia, serif";
+    ctx.fillStyle = "rgba(26, 26, 24, 0.18)";
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(-20 * Math.PI / 180);
+    ctx.translate(-canvas.width, -canvas.height);
+
+    for (let y = -canvas.height; y < canvas.height * 2; y += 28) {
+        for (let x = -canvas.width; x < canvas.width * 2; x += 320) {
+            ctx.fillText(cities, x + (y % 2 === 0 ? 0 : 160), y);
+        }
+    }
+    ctx.restore();
+}
+
+window.addEventListener("load", () => {
+    drawWatermark();
+});
