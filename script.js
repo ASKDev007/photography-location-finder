@@ -147,15 +147,12 @@ async function signUp() {
             "Content-Type": "application/json",
             "apikey": SUPABASE_KEY
         },
-        body: JSON.stringify({ 
-    location_id: locationId,
-    user_id: JSON.parse(localStorage.getItem("sb_user")).id
-})
+        body: JSON.stringify({ email, password })
     });
 
     const data = await res.json();
     if (data.user) {
-        document.getElementById("authMessage").textContent = "Account created! Check your email to confirm.";
+        document.getElementById("authMessage").textContent = "Account created! You can now sign in.";
     } else {
         document.getElementById("authMessage").textContent = data.msg || "Something went wrong.";
     }
@@ -208,6 +205,8 @@ async function saveLocation(event, locationId) {
     const token = localStorage.getItem("sb_token");
     if (!token) { openAuth(); return; }
 
+    const user = JSON.parse(localStorage.getItem("sb_user"));
+
     const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_locations`, {
         method: "POST",
         headers: {
@@ -215,7 +214,10 @@ async function saveLocation(event, locationId) {
             "apikey": SUPABASE_KEY,
             "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ location_id: locationId })
+        body: JSON.stringify({
+            location_id: locationId,
+            user_id: user.id
+        })
     });
 
     if (res.ok) {
@@ -235,4 +237,3 @@ window.addEventListener("load", () => {
     const user = localStorage.getItem("sb_user");
     if (user) updateAuthUI(JSON.parse(user));
 });
-
