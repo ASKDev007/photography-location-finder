@@ -244,21 +244,37 @@ async function showSavedLocations() {
         }
     );
 
-    const saved = await res.json();
-    const ids = saved.map(s => s.location_id);
-
-    if (ids.length === 0) {
-        document.getElementById("results").innerHTML = `
-            <div class="empty-state">
-                <p>You haven't saved any locations yet.</p>
-            </div>
-        `;
-        return;
-    }
-
-    const allLocations = await fetchAllLocations();
+   const allLocations = await fetchAllLocations();
     const savedLocations = allLocations.filter(l => ids.includes(l.id));
     renderCards(savedLocations);
+    markSavedLocations();
+}
+
+// ─── Mark already saved locations ─────────────────────────
+async function markSavedLocations() {
+    const token = localStorage.getItem("sb_token");
+    const user = localStorage.getItem("sb_user");
+    if (!token || !user) return;
+
+    const parsed = JSON.parse(user);
+    const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/saved_locations?select=location_id&user_id=eq.${parsed.id}`,
+        {
+            headers: {
+                "apikey": SUPABASE_KEY,
+                "Authorization": `Bearer ${token}`
+            }
+        }
+    );
+
+    const saved = await res.json();
+    saved.forEach(s => {
+        const btn = document.getElementById(`save-btn-${s.location_id}`);
+        if (btn) {
+            btn.textContent = "♥ Saved";
+            btn.style.color = "#5a7a5a";
+        }
+    });
 }
 
 // ─── Clear ─────────────────────────────────────────────────
@@ -293,8 +309,8 @@ function drawWatermark() {
     document.body.appendChild(canvas);
 
     const ctx = canvas.getContext("2d");
-    const cities = "MUMBAI PUNE DELHI BANGALORE CHENNAI HYDERABAD KOCHI KOLKATA JAIPUR VARANASI AGRA SRINAGAR LEH SHIMLA MANALI AMRITSAR MUNNAR AHMEDABAD";
-    
+    const cities = "MUMBAI PUNE DELHI BANGALORE CHENNAI HYDERABAD KOCHI KOLKATA JAIPUR VARANASI AGRA SRINAGAR LEH SHIMLA MANALI AMRITSAR MUNNAR AHMEDABAD GOA";
+
     ctx.font = "11px Georgia, serif";
     ctx.fillStyle = "rgba(26, 26, 24, 0.04)";
     ctx.save();
