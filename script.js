@@ -86,18 +86,27 @@ function renderCards(matchingLocations) {
         `;
         grid.appendChild(card);
 
-        const resolveImage = location.image_url
-            ? Promise.resolve(location.image_url)
-            : getUnsplashImage(location.name, location.city);
+        const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            obs.unobserve(entry.target);
+            const wrapper = entry.target.querySelector(".card-image-wrapper");
+            const resolveImage = location.image_url
+                ? Promise.resolve(location.image_url)
+                : getUnsplashImage(location.name, location.city);
 
-        resolveImage.then(imageUrl => {
-            const wrapper = card.querySelector(".card-image-wrapper");
-            if (imageUrl) {
-                wrapper.innerHTML = `<img class="card-image" src="${imageUrl}" alt="${location.name}" loading="lazy">`;
-            } else {
-                wrapper.innerHTML = `<div class="card-image-placeholder no-image">No image available</div>`;
-            }
-        });
+            resolveImage.then(imageUrl => {
+                if (imageUrl) {
+                    wrapper.innerHTML = `<img class="card-image" src="${imageUrl}" alt="${location.name}" loading="lazy">`;
+                } else {
+                    wrapper.innerHTML = `<div class="card-image-placeholder no-image">No image available</div>`;
+                }
+            });
+        }
+    });
+}, { rootMargin: "200px" });
+
+observer.observe(card);
     }
 }
 
@@ -341,28 +350,3 @@ function drawWatermark() {
 window.addEventListener("load", () => {
     drawWatermark();
 });
-
-// ─── Token refresh ─────────────────────────────────────────
-async function refreshToken() {
-    const refresh_token = localStorage.getItem("sb_refresh_token");
-    if (!refresh_token) return;
-
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "apikey": SUPABASE_KEY
-        },
-        body: JSON.stringify({ refresh_token })
-    });
-
-    const data = await res.json();
-    if (data.access_token) {
-        localStorage.setItem("sb_token", data.access_token);
-        localStorage.setItem("sb_refresh_token", data.refresh_token);
-        localStorage.setItem("sb_user", JSON.stringify(data.user));
-    }
-}
-
-// Refresh every 50 minutes
-setInterval(refreshToken, 50 * 60 * 1000);
