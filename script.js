@@ -229,7 +229,6 @@ async function saveLocation(event, locationId) {
     }
 }
 
-// ─── Saved locations view ──────────────────────────────────
 async function showSavedLocations() {
     const token = localStorage.getItem("sb_token");
     const user = JSON.parse(localStorage.getItem("sb_user"));
@@ -244,7 +243,19 @@ async function showSavedLocations() {
         }
     );
 
-   const allLocations = await fetchAllLocations();
+    const saved = await res.json();
+    const ids = saved.map(s => s.location_id);
+
+    if (ids.length === 0) {
+        document.getElementById("results").innerHTML = `
+            <div class="empty-state">
+                <p>You haven't saved any locations yet.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const allLocations = await fetchAllLocations();
     const savedLocations = allLocations.filter(l => ids.includes(l.id));
     renderCards(savedLocations);
     markSavedLocations();
