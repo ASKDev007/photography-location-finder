@@ -81,7 +81,7 @@ function renderCards(matchingLocations) {
                         <span class="card-meta-value ${safetyClass(location.safety)}">${location.safety}</span>
                     </div>
                 </div>
-                ${user ? `<button class="save-btn" id="save-btn-${location.id}" onclick="saveLocation(event, ${location.id})">♥ Save</button>` : ""}
+                ${user ? `<button class="save-btn" onclick="saveLocation(event, ${location.id})">♥ Save</button>` : ""}
             </div>
         `;
         grid.appendChild(card);
@@ -125,7 +125,6 @@ async function showSelection() {
     });
 
     renderCards(matchingLocations);
-    markSavedLocations();
 }
 
 // ─── Auth ──────────────────────────────────────────────────
@@ -226,11 +225,10 @@ async function saveLocation(event, locationId) {
 
     if (res.ok) {
         event.target.textContent = "♥ Saved";
-        event.target.style.color = "#5a7a5a";
+        event.target.style.color = "#1a5590";
     }
 }
 
-// ─── Saved locations view ──────────────────────────────────
 async function showSavedLocations() {
     const token = localStorage.getItem("sb_token");
     const user = JSON.parse(localStorage.getItem("sb_user"));
