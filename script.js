@@ -338,6 +338,14 @@ function drawWatermark() {
     ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.rotate(-20 * Math.PI / 180);
     ctx.translate(-canvas.width, -canvas.height);
+    ctx.strokeStyle = "rgba(26, 26, 24, 0.06)";
+ctx.lineWidth = 0.5;
+for (let y = 0; y < canvas.height; y += 40) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+}
 
     for (let y = -canvas.height; y < canvas.height * 2; y += 45) {
         for (let x = -canvas.width; x < canvas.width * 2; x += 320) {

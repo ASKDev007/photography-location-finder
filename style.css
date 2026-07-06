@@ -76,11 +76,11 @@ body {
 
 .hero-location-count {
     font-size: 11px;
-    color: #999890;
+    color: #6b6558;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     margin-top: 8px;
-    font-weight: 300;
+    font-weight: 500;
 }
 
 /* Search strip */
