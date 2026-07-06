@@ -175,6 +175,7 @@ async function signIn() {
     if (data.access_token) {
         localStorage.setItem("sb_token", data.access_token);
         localStorage.setItem("sb_user", JSON.stringify(data.user));
+        localStorage.setItem("sb_refresh_token", data.refresh_token);
         closeAuth();
         updateAuthUI(data.user);
     } else {
@@ -340,3 +341,28 @@ function drawWatermark() {
 window.addEventListener("load", () => {
     drawWatermark();
 });
+
+// ─── Token refresh ─────────────────────────────────────────
+async function refreshToken() {
+    const refresh_token = localStorage.getItem("sb_refresh_token");
+    if (!refresh_token) return;
+
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_KEY
+        },
+        body: JSON.stringify({ refresh_token })
+    });
+
+    const data = await res.json();
+    if (data.access_token) {
+        localStorage.setItem("sb_token", data.access_token);
+        localStorage.setItem("sb_refresh_token", data.refresh_token);
+        localStorage.setItem("sb_user", JSON.stringify(data.user));
+    }
+}
+
+// Refresh every 50 minutes
+setInterval(refreshToken, 50 * 60 * 1000);
