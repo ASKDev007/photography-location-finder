@@ -28,7 +28,7 @@ async function fetchAllLocations() {
 }
 
 // ─── Render cards ──────────────────────────────────────────
-function renderCards(matchingLocations) {
+function renderCards(matchingLocations, aiExplanation = null) {
     const safetyClass = (safety) => {
         if (safety === "High") return "safety-high";
         if (safety === "Medium") return "safety-medium";
@@ -44,11 +44,22 @@ function renderCards(matchingLocations) {
         return;
     }
 
+    let explanationHTML = "";
+    if (aiExplanation) {
+        explanationHTML = `
+            <div class="ai-explanation">
+                <button class="ai-explanation-toggle" onclick="toggleExplanation()">Why these locations? ↓</button>
+                <p class="ai-explanation-text hidden" id="aiExplanationText">${aiExplanation}</p>
+            </div>
+        `;
+    }
+
     document.getElementById("results").innerHTML = `
         <div class="results-header">
             <span class="results-title">Locations</span>
             <span class="results-count">${matchingLocations.length} found</span>
         </div>
+        ${explanationHTML}
         <div class="cards-grid" id="cardsGrid"></div>
     `;
 
@@ -81,32 +92,32 @@ function renderCards(matchingLocations) {
                         <span class="card-meta-value ${safetyClass(location.safety)}">${location.safety}</span>
                     </div>
                 </div>
-                ${user ? `<button class="save-btn" onclick="saveLocation(event, ${location.id})">♥ Save</button>` : ""}
+                ${user ? `<button class="save-btn" id="save-btn-${location.id}" onclick="saveLocation(event, ${location.id})">♥ Save</button>` : ""}
             </div>
         `;
         grid.appendChild(card);
 
         const observer = new IntersectionObserver((entries, obs) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            obs.unobserve(entry.target);
-            const wrapper = entry.target.querySelector(".card-image-wrapper");
-            const resolveImage = location.image_url
-                ? Promise.resolve(location.image_url)
-                : getUnsplashImage(location.name, location.city);
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    obs.unobserve(entry.target);
+                    const wrapper = entry.target.querySelector(".card-image-wrapper");
+                    const resolveImage = location.image_url
+                        ? Promise.resolve(location.image_url)
+                        : getUnsplashImage(location.name, location.city);
 
-            resolveImage.then(imageUrl => {
-                if (imageUrl) {
-                    wrapper.innerHTML = `<img class="card-image" src="${imageUrl}" alt="${location.name}" loading="lazy">`;
-                } else {
-                    wrapper.innerHTML = `<div class="card-image-placeholder no-image">No image available</div>`;
+                    resolveImage.then(imageUrl => {
+                        if (imageUrl) {
+                            wrapper.innerHTML = `<img class="card-image" src="${imageUrl}" alt="${location.name}" loading="lazy">`;
+                        } else {
+                            wrapper.innerHTML = `<div class="card-image-placeholder no-image">No image available</div>`;
+                        }
+                    });
                 }
             });
-        }
-    });
-}, { rootMargin: "200px" });
+        }, { rootMargin: "200px" });
 
-observer.observe(card);
+        observer.observe(card);
     }
 }
 
@@ -358,3 +369,85 @@ for (let y = 0; y < canvas.height; y += 40) {
 window.addEventListener("load", () => {
     drawWatermark();
 });
+
+// ─── Mode toggle ──────────────────────────────────────────
+function switchMode(mode) {
+    const filterStrip = document.getElementById("filterStrip");
+    const aiStrip = document.getElementById("aiStrip");
+    const filterBtn = document.getElementById("filterModeBtn");
+    const aiBtn = document.getElementById("aiModeBtn");
+
+    if (mode === "filter") {
+        filterStrip.classList.remove("hidden");
+        aiStrip.classList.add("hidden");
+        filterBtn.classList.add("active");
+        aiBtn.classList.remove("active");
+    } else {
+        filterStrip.classList.add("hidden");
+        aiStrip.classList.remove("hidden");
+        aiBtn.classList.add("active");
+        filterBtn.classList.remove("active");
+    }
+    clearSearch();
+}
+
+// ─── AI search ────────────────────────────────────────────
+async function runAISearch() {
+    const query = document.getElementById("aiSearchInput").value.trim();
+    if (!query) return;
+
+    document.getElementById("results").innerHTML = `
+        <div class="ai-loading"><p>Finding the best locations for you...</p></div>
+    `;
+
+    const locations = await fetchAllLocations();
+    const locationSummary = locations.map(l =>
+        `ID:${l.id} | ${l.name} | ${l.city} | ${l.style} | Best Time: ${l.bestTime} | Safety: ${l.safety} | ${l.description}`
+    ).join("\n");
+
+    const prompt = `You are a photography location expert. A photographer is looking for locations with this request: "${query}"
+
+Here are all available locations:
+${locationSummary}
+
+Return a JSON object with exactly this structure, no extra text, no markdown:
+{
+  "ids": [list of matching location IDs as numbers, best matches first, max 6],
+  "explanation": "one sentence explanation only if the query is complex or specific, otherwise leave as empty string"
+}`;
+
+    try {
+        const aiResponse = await fetch("/api/search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt })
+        });
+
+        const aiData = await aiResponse.json();
+        const raw = aiData.text.replace(/```json|```/g, "").trim();
+        const parsed = JSON.parse(raw);
+
+        const matchedLocations = parsed.ids
+            .map(id => locations.find(l => l.id === id))
+            .filter(Boolean);
+
+        renderCards(matchedLocations, parsed.explanation || null);
+
+    } catch (err) {
+        document.getElementById("results").innerHTML = `
+            <div class="empty-state"><p>AI search failed. Try filter search instead.</p></div>
+        `;
+    }
+}
+
+function toggleExplanation() {
+    const text = document.getElementById("aiExplanationText");
+    const btn = document.querySelector(".ai-explanation-toggle");
+    if (text.classList.contains("hidden")) {
+        text.classList.remove("hidden");
+        btn.textContent = "Why these locations? ↑";
+    } else {
+        text.classList.add("hidden");
+        btn.textContent = "Why these locations? ↓";
+    }
+}
