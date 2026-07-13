@@ -402,8 +402,8 @@ async function runAISearch() {
 
     const locations = await fetchAllLocations();
     const locationSummary = locations.map(l =>
-        `ID:${l.id} | ${l.name} | ${l.city} | ${l.style} | Best Time: ${l.bestTime} | Safety: ${l.safety} | ${l.description}`
-    ).join("\n");
+    `${l.id}|${l.name}|${l.city}|${l.style}|${l.bestTime}`
+).join("\n");
 
     const prompt = `You are a photography location expert. A photographer is looking for locations with this request: "${query}"
 
