@@ -28,7 +28,7 @@ async function fetchAllLocations() {
 }
 
 // ─── Render cards ──────────────────────────────────────────
-function renderCards(matchingLocations, aiExplanation = null) {
+function renderCards(matchingLocations) {
     const safetyClass = (safety) => {
         if (safety === "High") return "safety-high";
         if (safety === "Medium") return "safety-medium";
@@ -44,22 +44,11 @@ function renderCards(matchingLocations, aiExplanation = null) {
         return;
     }
 
-    let explanationHTML = "";
-    if (aiExplanation) {
-        explanationHTML = `
-            <div class="ai-explanation">
-                <button class="ai-explanation-toggle" onclick="toggleExplanation()">Why these locations? ↓</button>
-                <p class="ai-explanation-text hidden" id="aiExplanationText">${aiExplanation}</p>
-            </div>
-        `;
-    }
-
     document.getElementById("results").innerHTML = `
         <div class="results-header">
             <span class="results-title">Locations</span>
             <span class="results-count">${matchingLocations.length} found</span>
         </div>
-        ${explanationHTML}
         <div class="cards-grid" id="cardsGrid"></div>
     `;
 
@@ -145,6 +134,7 @@ async function showSelection() {
     });
 
     renderCards(matchingLocations);
+    markSavedLocations();
 }
 
 // ─── Auth ──────────────────────────────────────────────────
@@ -250,6 +240,7 @@ async function saveLocation(event, locationId) {
     }
 }
 
+// ─── Saved locations view ──────────────────────────────────
 async function showSavedLocations() {
     const token = localStorage.getItem("sb_token");
     const user = JSON.parse(localStorage.getItem("sb_user"));
@@ -315,6 +306,30 @@ function clearSearch() {
     document.getElementById("results").innerHTML = "";
 }
 
+// ─── Token refresh ─────────────────────────────────────────
+async function refreshToken() {
+    const refresh_token = localStorage.getItem("sb_refresh_token");
+    if (!refresh_token) return;
+
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_KEY
+        },
+        body: JSON.stringify({ refresh_token })
+    });
+
+    const data = await res.json();
+    if (data.access_token) {
+        localStorage.setItem("sb_token", data.access_token);
+        localStorage.setItem("sb_refresh_token", data.refresh_token);
+        localStorage.setItem("sb_user", JSON.stringify(data.user));
+    }
+}
+
+setInterval(refreshToken, 50 * 60 * 1000);
+
 // ─── On load ───────────────────────────────────────────────
 window.addEventListener("load", () => {
     const user = localStorage.getItem("sb_user");
@@ -349,14 +364,15 @@ function drawWatermark() {
     ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.rotate(-20 * Math.PI / 180);
     ctx.translate(-canvas.width, -canvas.height);
+
     ctx.strokeStyle = "rgba(26, 26, 24, 0.06)";
-ctx.lineWidth = 0.5;
-for (let y = 0; y < canvas.height; y += 40) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
-    ctx.stroke();
-}
+    ctx.lineWidth = 0.5;
+    for (let y = 0; y < canvas.height; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
 
     for (let y = -canvas.height; y < canvas.height * 2; y += 45) {
         for (let x = -canvas.width; x < canvas.width * 2; x += 320) {
@@ -369,85 +385,3 @@ for (let y = 0; y < canvas.height; y += 40) {
 window.addEventListener("load", () => {
     drawWatermark();
 });
-
-// ─── Mode toggle ──────────────────────────────────────────
-function switchMode(mode) {
-    const filterStrip = document.getElementById("filterStrip");
-    const aiStrip = document.getElementById("aiStrip");
-    const filterBtn = document.getElementById("filterModeBtn");
-    const aiBtn = document.getElementById("aiModeBtn");
-
-    if (mode === "filter") {
-        filterStrip.classList.remove("hidden");
-        aiStrip.classList.add("hidden");
-        filterBtn.classList.add("active");
-        aiBtn.classList.remove("active");
-    } else {
-        filterStrip.classList.add("hidden");
-        aiStrip.classList.remove("hidden");
-        aiBtn.classList.add("active");
-        filterBtn.classList.remove("active");
-    }
-    clearSearch();
-}
-
-// ─── AI search ────────────────────────────────────────────
-async function runAISearch() {
-    const query = document.getElementById("aiSearchInput").value.trim();
-    if (!query) return;
-
-    document.getElementById("results").innerHTML = `
-        <div class="ai-loading"><p>Finding the best locations for you...</p></div>
-    `;
-
-    const locations = await fetchAllLocations();
-    const locationSummary = locations.map(l =>
-    `${l.id}|${l.name}|${l.city}|${l.style}|${l.bestTime}`
-).join("\n");
-
-    const prompt = `You are a photography location expert. A photographer is looking for locations with this request: "${query}"
-
-Here are all available locations:
-${locationSummary}
-
-Return a JSON object with exactly this structure, no extra text, no markdown:
-{
-  "ids": [list of matching location IDs as numbers, best matches first, max 6],
-  "explanation": "one sentence explanation only if the query is complex or specific, otherwise leave as empty string"
-}`;
-
-    try {
-        const aiResponse = await fetch("/api/search", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt })
-        });
-
-        const aiData = await aiResponse.json();
-        const raw = aiData.text.replace(/```json|```/g, "").trim();
-        const parsed = JSON.parse(raw);
-
-        const matchedLocations = parsed.ids
-            .map(id => locations.find(l => l.id === id))
-            .filter(Boolean);
-
-        renderCards(matchedLocations, parsed.explanation || null);
-
-    } catch (err) {
-        document.getElementById("results").innerHTML = `
-            <div class="empty-state"><p>AI search failed. Try filter search instead.</p></div>
-        `;
-    }
-}
-
-function toggleExplanation() {
-    const text = document.getElementById("aiExplanationText");
-    const btn = document.querySelector(".ai-explanation-toggle");
-    if (text.classList.contains("hidden")) {
-        text.classList.remove("hidden");
-        btn.textContent = "Why these locations? ↑";
-    } else {
-        text.classList.add("hidden");
-        btn.textContent = "Why these locations? ↓";
-    }
-}
