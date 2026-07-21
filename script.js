@@ -123,13 +123,13 @@ async function showSelection() {
             location.style.toLowerCase().includes(selectedStyle);
 
         const matchesSearch =
-            searchText === "" ||
-            location.style.toLowerCase().includes(searchText) ||
-            location.city.toLowerCase().includes(searchText) ||
-            location.description.toLowerCase().includes(searchText) ||
-            location.bestTime.toLowerCase().includes(searchText) ||
-            location.safety.toLowerCase().includes(searchText);
-
+    searchText === "" ||
+    location.name.toLowerCase().includes(searchText) ||
+    location.style.toLowerCase().includes(searchText) ||
+    location.city.toLowerCase().includes(searchText) ||
+    location.description.toLowerCase().includes(searchText) ||
+    location.bestTime.toLowerCase().includes(searchText) ||
+    location.safety.toLowerCase().includes(searchText);
         return matchesStyle && matchesSearch;
     });
 
