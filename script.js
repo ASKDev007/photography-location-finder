@@ -132,7 +132,12 @@ async function showSelection() {
     location.safety.toLowerCase().includes(searchText);
         return matchesStyle && matchesSearch;
     });
-
+    
+    matchingLocations.sort((a, b) => {
+    const aName = a.name.toLowerCase().includes(searchText) ? -1 : 1;
+    const bName = b.name.toLowerCase().includes(searchText) ? -1 : 1;
+    return aName - bName;
+});
     renderCards(matchingLocations);
     markSavedLocations();
 }
