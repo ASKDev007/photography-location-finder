@@ -114,6 +114,9 @@ function renderCards(matchingLocations) {
 async function showSelection() {
     const searchText = document.getElementById("searchInput").value.toLowerCase();
     const selectedStyle = document.getElementById("styleSelect").value.toLowerCase();
+    document.getElementById("results").innerHTML = `
+    <div class="ai-loading"><p>Finding locations...</p></div>
+`;
 
     const locations = await fetchAllLocations();
 
