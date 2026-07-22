@@ -37,10 +37,10 @@ function renderCards(matchingLocations) {
 
     if (matchingLocations.length === 0) {
         document.getElementById("results").innerHTML = `
-            <div class="empty-state">
-                <p>No locations match your search. Try a different style or city.</p>
-            </div>
-        `;
+    <div class="empty-state">
+        <p>No locations found. Try searching Mumbai, Goa, Jaipur, or Varanasi.</p>
+    </div>
+`;
         return;
     }
 
