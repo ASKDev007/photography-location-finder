@@ -21,7 +21,6 @@
     <link rel="stylesheet" href="style.css">
 </head>
 
-
 <body>
 
     <div class="auth-modal hidden" id="authModal">
@@ -45,6 +44,26 @@
         <div class="hero-actions">
             <button class="hero-auth-btn" onclick="openAuth()" id="heroAuthBtn">Sign In</button>
             <button class="hero-auth-btn hidden" id="savedBtn" onclick="showSavedLocations()">My Locations</button>
+        </div>
+    </section>
+
+    <section class="about-section">
+        <div class="about-grid">
+            <div class="about-card">
+                <span class="about-icon">📍</span>
+                <h3 class="about-card-title">The Problem</h3>
+                <p class="about-card-text">Photographers in India spend hours researching locations across scattered blogs, forums and social media — with no single reliable source.</p>
+            </div>
+            <div class="about-card">
+                <span class="about-icon">🎯</span>
+                <h3 class="about-card-title">The Solution</h3>
+                <p class="about-card-text">A curated, searchable database of 224+ photography locations across India — filtered by style, city, safety and best time of day.</p>
+            </div>
+            <div class="about-card">
+                <span class="about-icon">⚙️</span>
+                <h3 class="about-card-title">Tech Stack</h3>
+                <p class="about-card-text">Built with vanilla HTML, CSS and JavaScript. Powered by Supabase for the database and auth, Unsplash API for images, deployed on Vercel.</p>
+            </div>
         </div>
     </section>
 

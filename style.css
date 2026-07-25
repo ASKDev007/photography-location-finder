@@ -600,3 +600,59 @@ body {
 .search-input {
     font-weight: 400;
 }
+/* About section */
+.about-section {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 48px 52px;
+    border-bottom: 1px solid #d8d2c4;
+}
+
+.about-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.about-card {
+    background: #eeeae0;
+    border: 1px solid #d8d2c4;
+    border-radius: 4px;
+    padding: 24px;
+    transition: border-color 0.2s;
+}
+
+.about-card:hover {
+    border-color: #999890;
+}
+
+.about-icon {
+    font-size: 20px;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.about-card-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 16px;
+    font-weight: 400;
+    color: #1a1a18;
+    margin-bottom: 10px;
+    letter-spacing: -0.01em;
+}
+
+.about-card-text {
+    font-size: 13px;
+    color: #6b6558;
+    line-height: 1.7;
+    font-weight: 300;
+}
+
+@media (max-width: 640px) {
+    .about-grid {
+        grid-template-columns: 1fr;
+    }
+    .about-section {
+        padding: 28px 24px 40px;
+    }
+}
