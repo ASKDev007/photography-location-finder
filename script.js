@@ -90,7 +90,6 @@ function renderCards(matchingLocations) {
                 <div class="card-actions">
                     <button class="action-btn" onclick="window.open('https://www.google.com/maps?q=${location.latitude},${location.longitude}','_blank')">Open in Maps</button>
                     ${user ? `<button class="action-btn save-btn" id="save-btn-${location.id}" onclick="saveLocation(event,${location.id})">Save</button>` : ""}
-                    ${user ? `<button class="action-btn save-btn" id="save-btn-${location.id}" onclick="saveLocation(event,${location.id})">Save</button>` : ""}
                     ${user ? `<button class="action-btn" onclick="openItineraryPicker(event,${location.id})">+ Trip</button>` : ""}
                 </div>
                 <div class="card-toggle" onclick="togglePhotowalks(event, ${location.id}, this)">
@@ -389,19 +388,44 @@ function signOut() {
 }
 
 // ─── Save location ─────────────────────────────────────────
+// ─── Save / Unsave location ────────────────────────────────
 async function saveLocation(event, locationId) {
     event.stopPropagation();
     const token = localStorage.getItem("sb_token");
     if (!token) { openAuth(); return; }
+
     const user = JSON.parse(localStorage.getItem("sb_user"));
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_locations`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` },
-        body: JSON.stringify({ location_id: locationId, user_id: user.id })
-    });
-    if (res.ok) {
-        event.target.textContent = "Saved";
-        event.target.classList.add("selected");
+    const btn = event.target;
+    const savedRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/saved_locations?select=id&location_id=eq.${locationId}&user_id=eq.${user.id}`,
+        { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` } }
+    );
+    const saved = await savedRes.json();
+
+    if (saved.length > 0) {
+        await fetch(
+            `${SUPABASE_URL}/rest/v1/saved_locations?id=eq.${saved[0].id}`,
+            {
+                method: "DELETE",
+                headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` }
+            }
+        );
+        btn.textContent = "Save";
+        btn.classList.remove("selected");
+    } else {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_locations`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "apikey": SUPABASE_KEY,
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({ location_id: locationId, user_id: user.id })
+        });
+        if (res.ok) {
+            btn.textContent = "Saved";
+            btn.classList.add("selected");
+        }
     }
 }
 
