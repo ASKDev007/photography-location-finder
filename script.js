@@ -2,7 +2,6 @@ const SUPABASE_URL = "https://ejixhprqrgrpmggfrdyq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_EI_5JB62X3W91Deq2w7HoQ_Daqf_mE5";
 const UNSPLASH_KEY = "Jlr46aClQ1a6d0wCt6UI8o27KhnH2qiZj-ZAI97JsGo";
 
-// ─── Unsplash ──────────────────────────────────────────────
 async function getUnsplashImage(locationName, city) {
     const query = encodeURIComponent(`${locationName} ${city} photography`);
     const response = await fetch(
@@ -10,21 +9,35 @@ async function getUnsplashImage(locationName, city) {
         { headers: { "Authorization": `Client-ID ${UNSPLASH_KEY}` } }
     );
     const data = await response.json();
-    if (data.results && data.results.length > 0) {
-        return data.results[0].urls.regular;
-    }
+    if (data.results && data.results.length > 0) return data.results[0].urls.regular;
     return null;
 }
 
-// ─── Fetch all locations from Supabase ─────────────────────
 async function fetchAllLocations() {
     const response = await fetch(`${SUPABASE_URL}/rest/v1/locations?select=*`, {
-        headers: {
-            "apikey": SUPABASE_KEY,
-            "Authorization": `Bearer ${SUPABASE_KEY}`
-        }
+        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
     });
     return await response.json();
+}
+
+// ─── Fetch photowalks for a location ──────────────────────
+async function fetchPhotowalks(locationId) {
+    const today = new Date().toISOString().split('T')[0];
+    const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/photowalks?location_id=eq.${locationId}&meetup_date=gte.${today}&order=meetup_date.asc`,
+        { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } }
+    );
+    return await res.json();
+}
+
+// ─── Fetch RSVP count for a photowalk ─────────────────────
+async function fetchRSVPCount(photoWalkId) {
+    const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/photowalk_rsvps?photowalk_id=eq.${photoWalkId}&select=id`,
+        { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } }
+    );
+    const data = await res.json();
+    return data.length;
 }
 
 // ─── Render cards ──────────────────────────────────────────
@@ -37,10 +50,7 @@ function renderCards(matchingLocations) {
 
     if (matchingLocations.length === 0) {
         document.getElementById("results").innerHTML = `
-    <div class="empty-state">
-        <p>No locations found. Try searching Mumbai, Goa, Jaipur, or Varanasi.</p>
-    </div>
-`;
+            <div class="empty-state"><p>No locations found. Try searching Mumbai, Goa, Jaipur, or Varanasi.</p></div>`;
         return;
     }
 
@@ -49,8 +59,7 @@ function renderCards(matchingLocations) {
             <span class="results-title">Locations</span>
             <span class="results-count">${matchingLocations.length} found</span>
         </div>
-        <div class="cards-grid" id="cardsGrid"></div>
-    `;
+        <div class="cards-grid" id="cardsGrid"></div>`;
 
     const grid = document.getElementById("cardsGrid");
     const user = localStorage.getItem("sb_user");
@@ -58,12 +67,9 @@ function renderCards(matchingLocations) {
     for (const location of matchingLocations) {
         const card = document.createElement("div");
         card.className = "location-card";
-        card.style.cursor = "pointer";
-        card.onclick = () => {
-            window.open(`https://www.google.com/maps?q=${location.latitude},${location.longitude}`, '_blank');
-        };
+
         card.innerHTML = `
-            <div class="card-image-wrapper">
+            <div class="card-image-wrapper" style="cursor:pointer;" onclick="window.open('https://www.google.com/maps?q=${location.latitude},${location.longitude}','_blank')">
                 <div class="card-image-placeholder"></div>
             </div>
             <div class="card-body">
@@ -81,10 +87,46 @@ function renderCards(matchingLocations) {
                         <span class="card-meta-value ${safetyClass(location.safety)}">${location.safety}</span>
                     </div>
                 </div>
-                ${user ? `<button class="save-btn" id="save-btn-${location.id}" onclick="saveLocation(event, ${location.id})">♥ Save</button>` : ""}
-            </div>
-        `;
+                <div class="card-actions">
+                    <button class="action-btn" onclick="window.open('https://www.google.com/maps?q=${location.latitude},${location.longitude}','_blank')">Open in Maps</button>
+                    ${user ? `<button class="action-btn save-btn" id="save-btn-${location.id}" onclick="saveLocation(event,${location.id})">Save</button>` : ""}
+                </div>
+                <div class="card-toggle" onclick="togglePhotowalks(event, ${location.id}, this)">
+                    <span class="toggle-text" id="toggle-label-${location.id}">Photowalks · Loading...</span>
+                    <span class="toggle-icon">↓</span>
+                </div>
+                <div class="community hidden" id="community-${location.id}">
+                    <div class="community-inner">
+                        <div class="community-head">
+                            <span class="community-heading">Upcoming Photowalks</span>
+                            ${user ? `<button class="action-btn" onclick="openHostForm(event,${location.id})">Host a Photowalk</button>` : ""}
+                        </div>
+                        <div id="photowalk-list-${location.id}">
+                            <p class="empty-sub">Loading...</p>
+                        </div>
+                        <div id="host-form-${location.id}" class="hidden">
+                            <div class="host-form">
+                                <input class="form-input" type="text" placeholder="Title e.g. Golden Hour Walk" id="pw-title-${location.id}">
+                                <input class="form-input" type="text" placeholder="Theme e.g. Street · Beginner" id="pw-theme-${location.id}">
+                                <input class="form-input" type="date" id="pw-date-${location.id}">
+                                <input class="form-input" type="time" id="pw-time-${location.id}">
+                                <div style="display:flex;gap:8px;margin-top:8px;">
+                                    <button class="action-btn" onclick="submitPhotowalk(event,${location.id})">Confirm</button>
+                                    <button class="action-btn" onclick="document.getElementById('host-form-${location.id}').classList.add('hidden')">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+
         grid.appendChild(card);
+
+        // Load photowalk count for toggle label
+        fetchPhotowalks(location.id).then(pws => {
+            const label = document.getElementById(`toggle-label-${location.id}`);
+            if (label) label.textContent = pws.length > 0 ? `Photowalks · ${pws.length} Upcoming` : `Photowalks · None Scheduled`;
+        });
 
         const observer = new IntersectionObserver((entries, obs) => {
             entries.forEach(entry => {
@@ -94,13 +136,11 @@ function renderCards(matchingLocations) {
                     const resolveImage = location.image_url
                         ? Promise.resolve(location.image_url)
                         : getUnsplashImage(location.name, location.city);
-
                     resolveImage.then(imageUrl => {
-                        if (imageUrl) {
-                            wrapper.innerHTML = `<img class="card-image" src="${imageUrl}" alt="${location.name}" loading="lazy">`;
-                        } else {
-                            wrapper.innerHTML = `<div class="card-image-placeholder no-image">No image available</div>`;
-                        }
+                        const img = imageUrl
+                            ? `<img class="card-image" src="${imageUrl}" alt="${location.name}" loading="lazy" style="cursor:pointer;" onclick="window.open('https://www.google.com/maps?q=${location.latitude},${location.longitude}','_blank')">`
+                            : `<div class="card-image-placeholder no-image"></div>`;
+                        wrapper.innerHTML = img;
                     });
                 }
             });
@@ -110,46 +150,182 @@ function renderCards(matchingLocations) {
     }
 }
 
+// ─── Toggle photowalk section ──────────────────────────────
+async function togglePhotowalks(event, locationId, toggleEl) {
+    event.stopPropagation();
+    const section = document.getElementById(`community-${locationId}`);
+    const icon = toggleEl.querySelector(".toggle-icon");
+    const isOpen = !section.classList.contains("hidden");
+
+    if (isOpen) {
+        section.classList.add("hidden");
+        icon.style.transform = "";
+        return;
+    }
+
+    section.classList.remove("hidden");
+    icon.style.transform = "rotate(180deg)";
+
+    const pws = await fetchPhotowalks(locationId);
+    const listEl = document.getElementById(`photowalk-list-${locationId}`);
+    const user = localStorage.getItem("sb_user");
+    const currentUser = user ? JSON.parse(user) : null;
+
+    if (pws.length === 0) {
+        listEl.innerHTML = `
+            <p class="empty-title">This location is waiting for its first photowalk.</p>
+            <p class="empty-sub">Be the first to bring photographers together here.</p>`;
+        return;
+    }
+
+    let html = "";
+    for (const pw of pws) {
+        const count = await fetchRSVPCount(pw.id);
+        const date = new Date(pw.meetup_date);
+        const month = date.toLocaleString('default', { month: 'short' }).toUpperCase();
+        const day = date.getDate();
+        const alreadyRsvpd = currentUser ? await checkRSVP(pw.id, currentUser.id) : false;
+        const isOwner = currentUser && pw.created_by === currentUser.id;
+
+        html += `
+            <div class="photowalk">
+                <div class="pw-date">
+                    <span class="pw-month">${month}</span>
+                    <span class="pw-day">${day}</span>
+                    <span class="pw-time">${pw.meetup_time}</span>
+                </div>
+                <div class="pw-info">
+                    <span class="pw-title">${pw.title}</span>
+                    ${pw.theme ? `<span class="pw-theme">${pw.theme}</span>` : ""}
+                    <span class="pw-meta">${count} attending</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                    ${currentUser && !isOwner ? `
+                        <button class="action-btn ${alreadyRsvpd ? 'selected' : ''}" 
+                            id="rsvp-btn-${pw.id}"
+                            onclick="toggleRSVP(event,${pw.id},'${currentUser.id}',${alreadyRsvpd})">
+                            ${alreadyRsvpd ? "Joined" : "Join Photowalk"}
+                        </button>` : ""}
+                    ${isOwner ? `<button class="action-btn" onclick="deletePhotowalk(event,${pw.id},${locationId})">Cancel</button>` : ""}
+                </div>
+            </div>`;
+    }
+    listEl.innerHTML = html;
+}
+
+// ─── Check RSVP ───────────────────────────────────────────
+async function checkRSVP(photoWalkId, userId) {
+    const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/photowalk_rsvps?photowalk_id=eq.${photoWalkId}&user_id=eq.${userId}&select=id`,
+        { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } }
+    );
+    const data = await res.json();
+    return data.length > 0;
+}
+
+// ─── Toggle RSVP ──────────────────────────────────────────
+async function toggleRSVP(event, photoWalkId, userId, alreadyJoined) {
+    event.stopPropagation();
+    const token = localStorage.getItem("sb_token");
+    if (!token) { openAuth(); return; }
+    const btn = event.target;
+
+    if (alreadyJoined) {
+        await fetch(`${SUPABASE_URL}/rest/v1/photowalk_rsvps?photowalk_id=eq.${photoWalkId}&user_id=eq.${userId}`, {
+            method: "DELETE",
+            headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` }
+        });
+        btn.textContent = "Join Photowalk";
+        btn.classList.remove("selected");
+        btn.setAttribute("onclick", `toggleRSVP(event,${photoWalkId},'${userId}',false)`);
+    } else {
+        await fetch(`${SUPABASE_URL}/rest/v1/photowalk_rsvps`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` },
+            body: JSON.stringify({ photowalk_id: photoWalkId, user_id: userId })
+        });
+        btn.textContent = "Joined";
+        btn.classList.add("selected");
+        btn.setAttribute("onclick", `toggleRSVP(event,${photoWalkId},'${userId}',true)`);
+    }
+}
+
+// ─── Open host form ───────────────────────────────────────
+function openHostForm(event, locationId) {
+    event.stopPropagation();
+    document.getElementById(`host-form-${locationId}`).classList.remove("hidden");
+}
+
+// ─── Submit photowalk ─────────────────────────────────────
+async function submitPhotowalk(event, locationId) {
+    event.stopPropagation();
+    const token = localStorage.getItem("sb_token");
+    const user = JSON.parse(localStorage.getItem("sb_user"));
+    const title = document.getElementById(`pw-title-${locationId}`).value.trim();
+    const theme = document.getElementById(`pw-theme-${locationId}`).value.trim();
+    const date = document.getElementById(`pw-date-${locationId}`).value;
+    const time = document.getElementById(`pw-time-${locationId}`).value;
+
+    if (!title || !date || !time) return alert("Please fill in title, date and time.");
+
+    await fetch(`${SUPABASE_URL}/rest/v1/photowalks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ location_id: locationId, created_by: user.id, title, theme, meetup_date: date, meetup_time: time })
+    });
+
+    document.getElementById(`host-form-${locationId}`).classList.add("hidden");
+    // Refresh the photowalk list
+    const fakeToggle = document.querySelector(`#community-${locationId}`).previousElementSibling;
+    document.getElementById(`community-${locationId}`).classList.add("hidden");
+    await togglePhotowalks(event, locationId, fakeToggle || { querySelector: () => ({ style: {} }) });
+}
+
+// ─── Delete photowalk ─────────────────────────────────────
+async function deletePhotowalk(event, photoWalkId, locationId) {
+    event.stopPropagation();
+    const token = localStorage.getItem("sb_token");
+    await fetch(`${SUPABASE_URL}/rest/v1/photowalks?id=eq.${photoWalkId}`, {
+        method: "DELETE",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` }
+    });
+    const listEl = document.getElementById(`photowalk-list-${locationId}`);
+    if (listEl) listEl.innerHTML = `<p class="empty-sub">Photowalk cancelled.</p>`;
+    const label = document.getElementById(`toggle-label-${locationId}`);
+    if (label) label.textContent = "Photowalks · None Scheduled";
+}
+
 // ─── Filter search ─────────────────────────────────────────
 async function showSelection() {
     const searchText = document.getElementById("searchInput").value.toLowerCase();
     const selectedStyle = document.getElementById("styleSelect").value.toLowerCase();
-    document.getElementById("results").innerHTML = `
-    <div class="ai-loading"><p>Finding locations...</p></div>
-`;
+    document.getElementById("results").innerHTML = `<div class="ai-loading"><p>Finding locations...</p></div>`;
 
     const locations = await fetchAllLocations();
-
     const matchingLocations = locations.filter(location => {
-        const matchesStyle =
-            selectedStyle === "" ||
-            location.style.toLowerCase().includes(selectedStyle);
-
-        const matchesSearch =
-    searchText === "" ||
-    location.name.toLowerCase().includes(searchText) ||
-    location.style.toLowerCase().includes(searchText) ||
-    location.city.toLowerCase().includes(searchText) ||
-    location.description.toLowerCase().includes(searchText) ||
-    location.bestTime.toLowerCase().includes(searchText) ||
-    location.safety.toLowerCase().includes(searchText);
+        const matchesStyle = selectedStyle === "" || location.style.toLowerCase().includes(selectedStyle);
+        const matchesSearch = searchText === "" ||
+            location.name.toLowerCase().includes(searchText) ||
+            location.style.toLowerCase().includes(searchText) ||
+            location.city.toLowerCase().includes(searchText) ||
+            location.description.toLowerCase().includes(searchText) ||
+            location.bestTime.toLowerCase().includes(searchText) ||
+            location.safety.toLowerCase().includes(searchText);
         return matchesStyle && matchesSearch;
     });
-    
+
     matchingLocations.sort((a, b) => {
-    const aName = a.name.toLowerCase().includes(searchText) ? -1 : 1;
-    const bName = b.name.toLowerCase().includes(searchText) ? -1 : 1;
-    return aName - bName;
-});
+        const aName = a.name.toLowerCase().includes(searchText) ? -1 : 1;
+        const bName = b.name.toLowerCase().includes(searchText) ? -1 : 1;
+        return aName - bName;
+    });
+
     renderCards(matchingLocations);
     markSavedLocations();
 }
 
 // ─── Auth ──────────────────────────────────────────────────
-function openAuth() {
-    document.getElementById("authModal").classList.remove("hidden");
-}
-
+function openAuth() { document.getElementById("authModal").classList.remove("hidden"); }
 function closeAuth() {
     document.getElementById("authModal").classList.add("hidden");
     document.getElementById("authMessage").textContent = "";
@@ -158,37 +334,23 @@ function closeAuth() {
 async function signUp() {
     const email = document.getElementById("authEmail").value;
     const password = document.getElementById("authPassword").value;
-
     const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "apikey": SUPABASE_KEY
-        },
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
         body: JSON.stringify({ email, password })
     });
-
     const data = await res.json();
-    if (data.user) {
-        document.getElementById("authMessage").textContent = "Account created! You can now sign in.";
-    } else {
-        document.getElementById("authMessage").textContent = data.msg || "Something went wrong.";
-    }
+    document.getElementById("authMessage").textContent = data.user ? "Account created! You can now sign in." : (data.msg || "Something went wrong.");
 }
 
 async function signIn() {
     const email = document.getElementById("authEmail").value;
     const password = document.getElementById("authPassword").value;
-
     const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "apikey": SUPABASE_KEY
-        },
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
         body: JSON.stringify({ email, password })
     });
-
     const data = await res.json();
     if (data.access_token) {
         localStorage.setItem("sb_token", data.access_token);
@@ -226,108 +388,65 @@ async function saveLocation(event, locationId) {
     event.stopPropagation();
     const token = localStorage.getItem("sb_token");
     if (!token) { openAuth(); return; }
-
     const user = JSON.parse(localStorage.getItem("sb_user"));
-
     const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_locations`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "apikey": SUPABASE_KEY,
-            "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-            location_id: locationId,
-            user_id: user.id
-        })
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ location_id: locationId, user_id: user.id })
     });
-
     if (res.ok) {
-        event.target.textContent = "♥ Saved";
-        event.target.style.color = "#1a5590";
+        event.target.textContent = "Saved";
+        event.target.classList.add("selected");
     }
 }
 
-// ─── Saved locations view ──────────────────────────────────
 async function showSavedLocations() {
     const token = localStorage.getItem("sb_token");
     const user = JSON.parse(localStorage.getItem("sb_user"));
-
     const res = await fetch(
         `${SUPABASE_URL}/rest/v1/saved_locations?select=location_id&user_id=eq.${user.id}`,
-        {
-            headers: {
-                "apikey": SUPABASE_KEY,
-                "Authorization": `Bearer ${token}`
-            }
-        }
+        { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` } }
     );
-
     const saved = await res.json();
     const ids = saved.map(s => s.location_id);
-
     if (ids.length === 0) {
-        document.getElementById("results").innerHTML = `
-            <div class="empty-state">
-                <p>You haven't saved any locations yet.</p>
-            </div>
-        `;
+        document.getElementById("results").innerHTML = `<div class="empty-state"><p>You haven't saved any locations yet.</p></div>`;
         return;
     }
-
     const allLocations = await fetchAllLocations();
-    const savedLocations = allLocations.filter(l => ids.includes(l.id));
-    renderCards(savedLocations);
+    renderCards(allLocations.filter(l => ids.includes(l.id)));
     markSavedLocations();
 }
 
-// ─── Mark already saved locations ─────────────────────────
 async function markSavedLocations() {
     const token = localStorage.getItem("sb_token");
     const user = localStorage.getItem("sb_user");
     if (!token || !user) return;
-
     const parsed = JSON.parse(user);
     const res = await fetch(
         `${SUPABASE_URL}/rest/v1/saved_locations?select=location_id&user_id=eq.${parsed.id}`,
-        {
-            headers: {
-                "apikey": SUPABASE_KEY,
-                "Authorization": `Bearer ${token}`
-            }
-        }
+        { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` } }
     );
-
     const saved = await res.json();
     saved.forEach(s => {
         const btn = document.getElementById(`save-btn-${s.location_id}`);
-        if (btn) {
-            btn.textContent = "♥ Saved";
-            btn.style.color = "#5a7a5a";
-        }
+        if (btn) { btn.textContent = "Saved"; btn.classList.add("selected"); }
     });
 }
 
-// ─── Clear ─────────────────────────────────────────────────
 function clearSearch() {
     document.getElementById("searchInput").value = "";
     document.getElementById("results").innerHTML = "";
 }
 
-// ─── Token refresh ─────────────────────────────────────────
 async function refreshToken() {
     const refresh_token = localStorage.getItem("sb_refresh_token");
     if (!refresh_token) return;
-
     const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "apikey": SUPABASE_KEY
-        },
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
         body: JSON.stringify({ refresh_token })
     });
-
     const data = await res.json();
     if (data.access_token) {
         localStorage.setItem("sb_token", data.access_token);
@@ -338,58 +457,36 @@ async function refreshToken() {
 
 setInterval(refreshToken, 50 * 60 * 1000);
 
-// ─── On load ───────────────────────────────────────────────
 window.addEventListener("load", () => {
     const user = localStorage.getItem("sb_user");
     if (user) updateAuthUI(JSON.parse(user));
-
     fetchAllLocations().then(locations => {
-        const count = locations.length;
-        document.getElementById("locationCount").textContent = `${count}+ locations across India`;
+        document.getElementById("locationCount").textContent = `${locations.length}+ locations across India`;
     });
+    drawWatermark();
 });
 
-// ─── Background watermark ──────────────────────────────────
 function drawWatermark() {
     const canvas = document.createElement("canvas");
-    canvas.style.position = "fixed";
-    canvas.style.top = "0";
-    canvas.style.left = "0";
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
-    canvas.style.zIndex = "0";
-    canvas.style.pointerEvents = "none";
+    canvas.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;";
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     document.body.appendChild(canvas);
-
     const ctx = canvas.getContext("2d");
     const cities = "MUMBAI PUNE DELHI BANGALORE CHENNAI HYDERABAD KOCHI KOLKATA JAIPUR VARANASI AGRA SRINAGAR LEH SHIMLA MANALI AMRITSAR MUNNAR AHMEDABAD GOA MYSORE HAMPI UDAIPUR JAISALMER JODHPUR RISHIKESH DARJEELING COORG PONDICHERRY";
-
     ctx.font = "11px Georgia, serif";
     ctx.fillStyle = "rgba(26, 26, 24, 0.04)";
     ctx.save();
     ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.rotate(-20 * Math.PI / 180);
     ctx.translate(-canvas.width, -canvas.height);
-
     ctx.strokeStyle = "rgba(26, 26, 24, 0.06)";
     ctx.lineWidth = 0.5;
     for (let y = 0; y < canvas.height; y += 40) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
     }
-
-    for (let y = -canvas.height; y < canvas.height * 2; y += 45) {
-        for (let x = -canvas.width; x < canvas.width * 2; x += 320) {
+    for (let y = -canvas.height; y < canvas.height * 2; y += 45)
+        for (let x = -canvas.width; x < canvas.width * 2; x += 320)
             ctx.fillText(cities, x + (y % 2 === 0 ? 0 : 160), y);
-        }
-    }
     ctx.restore();
 }
-
-window.addEventListener("load", () => {
-    drawWatermark();
-});
