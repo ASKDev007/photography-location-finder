@@ -36,6 +36,17 @@
         </div>
     </div>
 
+    <div class="auth-modal hidden" id="itineraryPickerModal">
+        <div class="auth-box">
+            <button class="auth-close" onclick="closeItineraryPicker()">✕</button>
+            <h2 class="auth-title">Add to Trip</h2>
+            <p class="auth-subtitle">Choose an existing trip or create a new one.</p>
+            <div id="itineraryPickerList"></div>
+            <input class="auth-input" type="text" id="newTripNameInline" placeholder="New trip name">
+            <button class="auth-btn" onclick="createItineraryAndAdd()">Create & Add</button>
+        </div>
+    </div>
+    
     <section class="hero">
         <p class="hero-eyebrow">Photography Guide — India</p>
         <h1 class="hero-title">Every frame starts<br>with a <em>place.</em></h1>
@@ -44,6 +55,7 @@
         <div class="hero-actions">
             <button class="hero-auth-btn" onclick="openAuth()" id="heroAuthBtn">Sign In</button>
             <button class="hero-auth-btn hidden" id="savedBtn" onclick="showSavedLocations()">My Locations</button>
+            <button class="hero-auth-btn hidden" id="itineraryNavBtn" onclick="showItineraries()">My Itineraries</button>
         </div>
     </section>
 

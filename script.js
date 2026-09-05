@@ -90,6 +90,8 @@ function renderCards(matchingLocations) {
                 <div class="card-actions">
                     <button class="action-btn" onclick="window.open('https://www.google.com/maps?q=${location.latitude},${location.longitude}','_blank')">Open in Maps</button>
                     ${user ? `<button class="action-btn save-btn" id="save-btn-${location.id}" onclick="saveLocation(event,${location.id})">Save</button>` : ""}
+                    ${user ? `<button class="action-btn save-btn" id="save-btn-${location.id}" onclick="saveLocation(event,${location.id})">Save</button>` : ""}
+                    ${user ? `<button class="action-btn" onclick="openItineraryPicker(event,${location.id})">+ Trip</button>` : ""}
                 </div>
                 <div class="card-toggle" onclick="togglePhotowalks(event, ${location.id}, this)">
                     <span class="toggle-text" id="toggle-label-${location.id}">Photowalks · Loading...</span>
@@ -366,14 +368,17 @@ async function signIn() {
 function updateAuthUI(user) {
     const btn = document.getElementById("heroAuthBtn");
     const savedBtn = document.getElementById("savedBtn");
+    const itineraryBtn = document.getElementById("itineraryNavBtn");
     if (user) {
         btn.textContent = `${user.email.split("@")[0]} — Sign Out`;
         btn.onclick = signOut;
         savedBtn.classList.remove("hidden");
+        itineraryBtn.classList.remove("hidden");
     } else {
         btn.textContent = "Sign In";
         btn.onclick = openAuth;
         savedBtn.classList.add("hidden");
+        itineraryBtn.classList.add("hidden");
     }
 }
 
@@ -489,4 +494,225 @@ function drawWatermark() {
         for (let x = -canvas.width; x < canvas.width * 2; x += 320)
             ctx.fillText(cities, x + (y % 2 === 0 ? 0 : 160), y);
     ctx.restore();
+}
+
+// ─── Itinerary / Trip Planner ─────────────────────────────
+async function fetchItineraries() {
+    const token = localStorage.getItem("sb_token");
+    const user = JSON.parse(localStorage.getItem("sb_user"));
+    const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/itineraries?user_id=eq.${user.id}&order=created_at.desc`,
+        { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` } }
+    );
+    return await res.json();
+}
+
+async function fetchItineraryLocations(itineraryId) {
+    const token = localStorage.getItem("sb_token");
+    const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/itinerary_locations?itinerary_id=eq.${itineraryId}&order=position.asc`,
+        { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` } }
+    );
+    return await res.json();
+}
+
+async function createItinerary() {
+    const token = localStorage.getItem("sb_token");
+    const user = JSON.parse(localStorage.getItem("sb_user"));
+    const name = document.getElementById("newItineraryName").value.trim();
+    if (!name) return alert("Please enter a trip name.");
+
+    await fetch(`${SUPABASE_URL}/rest/v1/itineraries`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ user_id: user.id, name })
+    });
+    document.getElementById("newItineraryName").value = "";
+    await showItineraries();
+}
+
+async function deleteItinerary(event, itineraryId) {
+    event.stopPropagation();
+    const token = localStorage.getItem("sb_token");
+    if (!confirm("Delete this trip and all its saved locations?")) return;
+    await fetch(`${SUPABASE_URL}/rest/v1/itineraries?id=eq.${itineraryId}`, {
+        method: "DELETE",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` }
+    });
+    await showItineraries();
+}
+
+// ─── "Add to Itinerary" picker modal (opened from a location card) ───
+let pendingLocationId = null;
+
+async function openItineraryPicker(event, locationId) {
+    event.stopPropagation();
+    const token = localStorage.getItem("sb_token");
+    if (!token) { openAuth(); return; }
+    pendingLocationId = locationId;
+
+    const itineraries = await fetchItineraries();
+    const listEl = document.getElementById("itineraryPickerList");
+    listEl.innerHTML = itineraries.length
+        ? itineraries.map(it => `
+            <button class="action-btn" style="width:100%;margin-bottom:6px;"
+                onclick="addLocationToItinerary(${it.id}, ${pendingLocationId})">
+                ${it.name}
+            </button>`).join("")
+        : `<p class="empty-sub">No trips yet — create one below.</p>`;
+
+    document.getElementById("itineraryPickerModal").classList.remove("hidden");
+}
+
+function closeItineraryPicker() {
+    document.getElementById("itineraryPickerModal").classList.add("hidden");
+    document.getElementById("newTripNameInline").value = "";
+    pendingLocationId = null;
+}
+
+async function createItineraryAndAdd() {
+    const token = localStorage.getItem("sb_token");
+    const user = JSON.parse(localStorage.getItem("sb_user"));
+    const name = document.getElementById("newTripNameInline").value.trim();
+    if (!name) return alert("Please enter a trip name.");
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/itineraries`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json", "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${token}`, "Prefer": "return=representation"
+        },
+        body: JSON.stringify({ user_id: user.id, name })
+    });
+    const [created] = await res.json();
+    await addLocationToItinerary(created.id, pendingLocationId);
+}
+
+async function addLocationToItinerary(itineraryId, locationId) {
+    const token = localStorage.getItem("sb_token");
+    const existing = await fetchItineraryLocations(itineraryId);
+    const nextPosition = existing.length
+        ? Math.max(...existing.map(r => r.position)) + 1
+        : 0;
+
+    await fetch(`${SUPABASE_URL}/rest/v1/itinerary_locations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ itinerary_id: itineraryId, location_id: locationId, position: nextPosition })
+    });
+    closeItineraryPicker();
+    alert("Added to itinerary.");
+}
+
+// ─── "My Itineraries" view (renders into #results, like showSavedLocations) ───
+async function showItineraries() {
+    const itineraries = await fetchItineraries();
+    const resultsEl = document.getElementById("results");
+
+    resultsEl.innerHTML = `
+        <div class="results-header">
+            <span class="results-title">My Itineraries</span>
+        </div>
+        <div class="host-form" style="max-width:320px;margin-bottom:24px;">
+            <input class="form-input" type="text" id="newItineraryName" placeholder="New trip name e.g. Rajasthan Winter Trip">
+            <button class="action-btn" onclick="createItinerary()">Create Trip</button>
+        </div>
+        <div id="itineraryListGrid" class="cards-grid"></div>`;
+
+    const grid = document.getElementById("itineraryListGrid");
+    if (itineraries.length === 0) {
+        grid.innerHTML = `<p class="empty-sub">No trips yet. Create one above.</p>`;
+        return;
+    }
+
+    grid.innerHTML = itineraries.map(it => `
+        <div class="location-card" style="cursor:pointer;" onclick="openItinerary(${it.id}, '${it.name.replace(/'/g, "\\'")}')">
+            <div class="card-body">
+                <h3 class="card-name">${it.name}</h3>
+                <p class="card-city">Created ${new Date(it.created_at).toLocaleDateString()}</p>
+                <div class="card-actions">
+                    <button class="action-btn" onclick="deleteItinerary(event, ${it.id})">Delete Trip</button>
+                </div>
+            </div>
+        </div>`).join("");
+}
+
+// ─── Itinerary detail view: list, remove, reorder ───
+async function openItinerary(itineraryId, itineraryName) {
+    const rows = await fetchItineraryLocations(itineraryId);
+    const allLocations = await fetchAllLocations();
+    const resultsEl = document.getElementById("results");
+
+    if (rows.length === 0) {
+        resultsEl.innerHTML = `
+            <div class="results-header"><span class="results-title">${itineraryName}</span></div>
+            <p class="empty-sub">No locations added yet. Go add some from the search results.</p>
+            <button class="action-btn" style="max-width:160px;margin-top:12px;" onclick="showItineraries()">← Back to Trips</button>`;
+        return;
+    }
+
+    const orderedRows = rows.sort((a, b) => a.position - b.position);
+    const itemsHtml = orderedRows.map((row, idx) => {
+        const loc = allLocations.find(l => l.id === row.location_id);
+        if (!loc) return "";
+        return `
+            <div class="photowalk" id="itin-row-${row.id}">
+                <div class="pw-date"><span class="pw-day">${idx + 1}</span></div>
+                <div class="pw-info">
+                    <span class="pw-title">${loc.name}</span>
+                    <span class="pw-theme">${loc.city} · ${loc.style}</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                    <div style="display:flex;gap:4px;">
+                        ${idx > 0 ? `<button class="action-btn" onclick="moveItineraryLocation(${itineraryId},${row.id},'up')">↑</button>` : ""}
+                        ${idx < orderedRows.length - 1 ? `<button class="action-btn" onclick="moveItineraryLocation(${itineraryId},${row.id},'down')">↓</button>` : ""}
+                    </div>
+                    <button class="action-btn" onclick="removeLocationFromItinerary(${itineraryId},${row.id})">Remove</button>
+                </div>
+            </div>`;
+    }).join("");
+
+    resultsEl.innerHTML = `
+        <div class="results-header"><span class="results-title">${itineraryName}</span></div>
+        <div class="community" style="border-top:none;">
+            <div class="community-inner">${itemsHtml}</div>
+        </div>
+        <button class="action-btn" style="max-width:160px;margin-top:16px;" onclick="showItineraries()">← Back to Trips</button>`;
+}
+
+async function removeLocationFromItinerary(itineraryId, rowId) {
+    const token = localStorage.getItem("sb_token");
+    await fetch(`${SUPABASE_URL}/rest/v1/itinerary_locations?id=eq.${rowId}`, {
+        method: "DELETE",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` }
+    });
+    const row = document.getElementById(`itin-row-${rowId}`);
+    if (row) {
+        const nameEl = document.querySelector(".results-title");
+        openItinerary(itineraryId, nameEl ? nameEl.textContent : "Itinerary");
+    }
+}
+
+async function moveItineraryLocation(itineraryId, rowId, direction) {
+    const token = localStorage.getItem("sb_token");
+    const rows = (await fetchItineraryLocations(itineraryId)).sort((a, b) => a.position - b.position);
+    const idx = rows.findIndex(r => r.id === rowId);
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= rows.length) return;
+
+    const a = rows[idx], b = rows[swapIdx];
+    await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/itinerary_locations?id=eq.${a.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` },
+            body: JSON.stringify({ position: b.position })
+        }),
+        fetch(`${SUPABASE_URL}/rest/v1/itinerary_locations?id=eq.${b.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` },
+            body: JSON.stringify({ position: a.position })
+        })
+    ]);
+    const nameEl = document.querySelector(".results-title");
+    openItinerary(itineraryId, nameEl ? nameEl.textContent : "Itinerary");
 }
