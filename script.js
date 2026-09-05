@@ -387,41 +387,60 @@ function signOut() {
     updateAuthUI(null);
 }
 
-// ─── Save location ─────────────────────────────────────────
-// ─── Save / Unsave location ────────────────────────────────
 async function saveLocation(event, locationId) {
     event.stopPropagation();
+
     const token = localStorage.getItem("sb_token");
     if (!token) { openAuth(); return; }
 
     const user = JSON.parse(localStorage.getItem("sb_user"));
     const btn = event.target;
-    const savedRes = await fetch(
+
+    const check = await fetch(
         `${SUPABASE_URL}/rest/v1/saved_locations?select=id&location_id=eq.${locationId}&user_id=eq.${user.id}`,
-        { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` } }
+        {
+            headers: {
+                "apikey": SUPABASE_KEY,
+                "Authorization": `Bearer ${token}`
+            }
+        }
     );
-    const saved = await savedRes.json();
+
+    const saved = await check.json();
 
     if (saved.length > 0) {
-        await fetch(
+        const res = await fetch(
             `${SUPABASE_URL}/rest/v1/saved_locations?id=eq.${saved[0].id}`,
             {
                 method: "DELETE",
-                headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` }
+                headers: {
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": `Bearer ${token}`
+                }
             }
         );
-        btn.textContent = "Save";
-        btn.classList.remove("selected");
+
+        if (res.ok) {
+            btn.textContent = "Save";
+            btn.classList.remove("selected");
+        }
     } else {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_locations`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "apikey": SUPABASE_KEY,
-                "Authorization": `Bearer ${token}`
-            },
-            body: JSON.stringify({ location_id: locationId, user_id: user.id })
-        });
+        const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/saved_locations`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    location_id: locationId,
+                    user_id: user.id
+                })
+            }
+        );
+
         if (res.ok) {
             btn.textContent = "Saved";
             btn.classList.add("selected");
