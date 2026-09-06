@@ -739,12 +739,12 @@ body {
     font-size: 9px;
     letter-spacing: 1.2px;
     text-transform: uppercase;
-    color: #3f3c36;
-    background: #f4f0e8;
-    border: 1px solid #aaa59a;
+    color: #2f2c27;
+    background: #e1ddd2;
+    border: 1px solid #918b80;
     border-radius: 3px;
     padding: 10px 14px;
-    min-height: 38px;
+    min-height: 36px;
     cursor: pointer;
     transition: border-color 0.2s, color 0.2s, background 0.2s, transform 0.1s;
     text-align: center;
@@ -753,7 +753,7 @@ body {
 .action-btn:hover {
     border-color: #5f5a50;
     color: #1a1a18;
-    background: #e0dbd0;
+    background: #d4cfc3;
 }
 
 .action-btn:active {
@@ -763,7 +763,7 @@ body {
 .action-btn.selected {
     border-color: #5f5a50;
     color: #1a1a18;
-    background: #d9d4c8;
+    background: #c9c3b6;
 }
 
 
@@ -943,4 +943,35 @@ body {
 .community-signin-btn:hover {
     background: #e8e4da;
     border-color: #5f5a50;
+}
+
+/* ─── Site Footer ───────────────────────────────────────── */
+.site-footer {
+    margin-top: 80px;
+    padding: 32px 24px 36px;
+    border-top: 1px solid #d0cabd;
+    text-align: center;
+}
+
+.footer-brand {
+    font-family: 'Georgia', serif;
+    font-size: 16px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #3f3c36;
+}
+
+.footer-tagline {
+    margin-top: 6px;
+    font-size: 9px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #8a857b;
+}
+
+.footer-copyright {
+    margin-top: 18px;
+    font-size: 8px;
+    letter-spacing: 0.8px;
+    color: #9a958b;
 }
