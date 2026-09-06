@@ -601,100 +601,86 @@ body {
 }
 
 /* ─── Photowalk Community ─── */
-.card-actions {
-    display: flex;
-    gap: 8px;
-    padding: 12px 20px;
-    border-top: 1px solid #d8d2c4;
-}
-
-.action-btn {
-    flex: 1;
-    font-family: 'Inter', sans-serif;
-    font-size: 7.5px;
-    letter-spacing: 1.6px;
-    text-transform: uppercase;
-    color: #888884;
-    background: transparent;
-    border: 1px solid #ccc8bc;
-    border-radius: 2px;
-    padding: 8px 12px;
-    cursor: pointer;
-    transition: border-color 0.2s, color 0.2s, background 0.2s;
-    text-align: center;
-}
-
-.action-btn:hover {
-    border-color: #999890;
-    color: #3a3a38;
-    background: #e8e4da;
-}
-
-.action-btn.selected {
-    border-color: #6b6558;
-    color: #3a3a38;
-    background: #e0dcd0;
-}
 
 .card-toggle {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 20px;
-    border-top: 1px solid #e0dbd0;
+    padding: 16px 20px;
+    border-top: 1px solid #cfc9bc;
+    background: #e5e1d6;
     cursor: pointer;
     user-select: none;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.card-toggle:hover {
+    background: #ddd8cc;
+    border-color: #aaa59a;
 }
 
 .toggle-text {
-    font-size: 7.5px;
+    font-size: 11px;
     letter-spacing: 1.8px;
     text-transform: uppercase;
-    color: #aaa89e;
+    color: #4f4b43;
+    font-weight: 500;
     transition: color 0.2s;
 }
 
 .card-toggle:hover .toggle-text {
-    color: #6b6558;
+    color: #1a1a18;
 }
 
 .toggle-icon {
-    font-size: 10px;
-    color: #c4c0b8;
+    font-size: 13px;
+    color: #5f5a50;
     transition: transform 0.28s ease;
 }
 
+
+/* Expanded Photowalk section */
+
 .community {
-    border-top: 1px solid #d8d2c4;
+    border-top: 1px solid #cfc9bc;
     background: #e8e4da;
     overflow: hidden;
 }
 
 .community-inner {
-    padding: 18px 20px 20px;
+    padding: 22px 20px 24px;
 }
 
 .community-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
 }
 
 .community-heading {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: #999890;
+    color: #5f5b52;
+    font-weight: 500;
 }
+.community-head .action-btn {
+    flex: initial;
+    width: auto;
+    min-width: 190px;
+}
+
+
+/* Individual Photowalk */
 
 .photowalk {
     display: grid;
-    grid-template-columns: 52px 1fr auto;
-    gap: 14px;
+    grid-template-columns: 58px 1fr auto;
+    gap: 16px;
     align-items: start;
-    padding: 12px 0;
-    border-top: 1px solid #d8d2c4;
+    padding: 15px 0;
+    border-top: 1px solid #d0cabd;
 }
 
 .photowalk:first-of-type {
@@ -702,22 +688,15 @@ body {
     padding-top: 0;
 }
 
-.pw-date {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-}
-
 .pw-month {
-    font-size: 7px;
+    font-size: 8px;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: #aaa89e;
+    color: #8d887d;
 }
 
 .pw-day {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 400;
     color: #1a1a18;
     line-height: 1;
@@ -725,62 +704,100 @@ body {
 }
 
 .pw-time {
-    font-size: 7.5px;
-    color: #b8b4aa;
-    margin-top: 2px;
-}
-
-.pw-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    font-size: 10px;
+    color: #5f5b52;
+    margin-top: 4px;
+    letter-spacing: 0.02em;
 }
 
 .pw-title {
-    font-size: 13px;
+    font-size: 15px;
     color: #1a1a18;
     font-weight: 400;
     letter-spacing: -0.2px;
 }
 
 .pw-theme {
-    font-size: 7.5px;
+    font-size: 9px;
     letter-spacing: 1.4px;
     text-transform: uppercase;
-    color: #aaa89e;
+    color: #888278;
 }
 
 .pw-meta {
-    font-size: 8px;
-    color: #b8b4aa;
-    margin-top: 2px;
+    font-size: 10px;
+    color: #777269;
+    margin-top: 3px;
 }
+
+
+/* Photowalk buttons */
+
+.action-btn {
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #3f3c36;
+    background: #f4f0e8;
+    border: 1px solid #aaa59a;
+    border-radius: 3px;
+    padding: 10px 14px;
+    min-height: 38px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s, background 0.2s, transform 0.1s;
+    text-align: center;
+}
+
+.action-btn:hover {
+    border-color: #5f5a50;
+    color: #1a1a18;
+    background: #e0dbd0;
+}
+
+.action-btn:active {
+    transform: translateY(1px);
+}
+
+.action-btn.selected {
+    border-color: #5f5a50;
+    color: #1a1a18;
+    background: #d9d4c8;
+}
+
+
+/* Attendee controls */
 
 .attendee-btn {
     align-self: flex-start;
     flex: initial;
-    margin-top: 5px;
+    width: auto;
+    min-width: 150px;
+    margin-top: 7px;
+    min-height: 36px;
+    padding: 9px 14px;
 }
 
 .attendee-list {
-    margin-top: 8px;
+    margin-top: 10px;
 }
 
 .attendee-names {
     display: flex;
     flex-wrap: wrap;
-    gap: 5px;
+    gap: 6px;
 }
 
 .attendee-name {
-    font-size: 8px;
+    font-size: 9px;
     letter-spacing: 0.8px;
     text-transform: uppercase;
-    color: #6b6558;
+    color: #5f5a50;
     background: #f4f0e8;
-    border: 1px solid #d8d2c4;
-    border-radius: 2px;
-    padding: 4px 6px;
+    border: 1px solid #c8c2b6;
+    border-radius: 3px;
+    padding: 5px 8px;
 }
 
 .host-form {
@@ -830,4 +847,100 @@ body {
 
 .auth-guest:hover {
     color: #6b6558;
+}
+
+/* Keep card action buttons evenly sized */
+.card-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid #d8d2c4;
+}
+
+.card-actions .action-btn {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+}
+
+.card-actions .save-btn {
+    width: auto;
+    margin-top: 0;
+}
+
+/* Photowalk layout refinement */
+.pw-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    min-width: 0;
+}
+
+.pw-title,
+.pw-theme,
+.pw-meta {
+    display: block;
+}
+
+.attendee-btn {
+    align-self: flex-start;
+    flex: initial;
+    width: auto;
+    min-width: 150px;
+    margin-top: 7px;
+    min-height: 36px;
+    padding: 9px 14px;
+}
+
+.community-head .action-btn {
+    flex: initial;
+    width: auto;
+    min-width: 190px;
+}
+
+/* Guest prompt for Photowalks */
+.community-guest-note {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+    text-align: right;
+    max-width: 285px;
+    padding: 10px 12px;
+    border: 1px solid #b8b2a6;
+    background: #ddd8cc;
+    border-radius: 3px;
+}
+
+.community-guest-title {
+    font-size: 10px;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: #2f2c27;
+    font-weight: 600;
+}
+
+.community-guest-sub {
+    font-size: 10px;
+    line-height: 1.55;
+    color: #5f5a50;
+    max-width: 270px;
+}
+
+.community-signin-btn {
+    flex: initial;
+    width: auto;
+    min-width: 120px;
+    margin-top: 5px;
+    padding: 9px 16px;
+    min-height: 34px;
+    color: #2f2c27;
+    border-color: #918b80;
+    background: #f4f0e8;
+}
+
+.community-signin-btn:hover {
+    background: #e8e4da;
+    border-color: #5f5a50;
 }

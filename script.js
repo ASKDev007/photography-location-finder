@@ -185,9 +185,25 @@ function renderCards(matchingLocations) {
                 <div class="community hidden" id="community-${location.id}">
                     <div class="community-inner">
                         <div class="community-head">
-                            <span class="community-heading">Upcoming Photowalks</span>
-                            ${user ? `<button class="action-btn" onclick="openHostForm(event,${location.id})">Host a Photowalk</button>` : ""}
-                        </div>
+    <span class="community-heading">Upcoming Photowalks</span>
+
+    ${user
+        ? `<button class="action-btn" onclick="openHostForm(event,${location.id})">
+                Host a Photowalk
+           </button>`
+        : `
+            <div class="community-guest-note">
+                <span class="community-guest-title">Join the Photowalk community</span>
+                <span class="community-guest-sub">
+                    Sign in to join this Photowalk, view attendees, or host your own.
+                </span>
+                <button class="action-btn community-signin-btn" onclick="openAuth()">
+                    Sign In
+                </button>
+            </div>
+        `
+    }
+</div>
                         <div id="photowalk-list-${location.id}">
                             <p class="empty-sub">Loading...</p>
                         </div>
@@ -237,9 +253,21 @@ function renderCards(matchingLocations) {
     }
 }
 
+function formatTime12Hour(time) {
+    if (!time) return "";
+
+    const [hours, minutes] = time.split(":");
+    const hour = parseInt(hours, 10);
+    const suffix = hour >= 12 ? "PM" : "AM";
+    const displayHour = hour % 12 || 12;
+
+    return `${displayHour}:${minutes} ${suffix}`;
+}
+
 // ─── Toggle photowalk section ──────────────────────────────
 async function togglePhotowalks(event, locationId, toggleEl) {
     event.stopPropagation();
+
     const section = document.getElementById(`community-${locationId}`);
     const icon = toggleEl.querySelector(".toggle-icon");
     const isOpen = !section.classList.contains("hidden");
@@ -266,10 +294,11 @@ async function togglePhotowalks(event, locationId, toggleEl) {
     }
 
     let html = "";
+
     for (const pw of pws) {
         const count = await fetchRSVPCount(pw.id);
         const date = new Date(pw.meetup_date);
-        const month = date.toLocaleString('default', { month: 'short' }).toUpperCase();
+        const month = date.toLocaleString("default", { month: "short" }).toUpperCase();
         const day = date.getDate();
         const alreadyRsvpd = currentUser ? await checkRSVP(pw.id, currentUser.id) : false;
         const isOwner = currentUser && pw.created_by === currentUser.id;
@@ -279,28 +308,124 @@ async function togglePhotowalks(event, locationId, toggleEl) {
                 <div class="pw-date">
                     <span class="pw-month">${month}</span>
                     <span class="pw-day">${day}</span>
-                    <span class="pw-time">${pw.meetup_time}</span>
+                    <span class="pw-time">${formatTime12Hour(pw.meetup_time)}</span>
                 </div>
+
                 <div class="pw-info">
                     <span class="pw-title">${pw.title}</span>
                     ${pw.theme ? `<span class="pw-theme">${pw.theme}</span>` : ""}
                     <span class="pw-meta" id="pw-count-${pw.id}">${count} attending</span>
+
                     ${currentUser ? `
-                        <button class="action-btn attendee-btn" id="attendees-btn-${pw.id}" onclick="togglePhotowalkAttendees(event,${pw.id})">View attendees</button>
-                        <div class="attendee-list hidden" id="attendees-${pw.id}"></div>` : ""}
+                        <button class="action-btn attendee-btn"
+                            id="attendees-btn-${pw.id}"
+                            onclick="togglePhotowalkAttendees(event,${pw.id})">
+                            View attendees
+                        </button>
+
+                        <button class="action-btn share-btn"
+                            onclick="sharePhotowalk(event,${pw.id},'${encodeURIComponent(pw.title)}')">
+                            Share Photowalk
+                        </button>
+
+                        <div class="attendee-list hidden" id="attendees-${pw.id}"></div>
+                    ` : ""}
                 </div>
+
                 <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
                     ${currentUser && !isOwner ? `
-                        <button class="action-btn ${alreadyRsvpd ? 'selected' : ''}" 
+                        <button class="action-btn ${alreadyRsvpd ? "selected" : ""}" 
                             id="rsvp-btn-${pw.id}"
                             onclick="toggleRSVP(event,${pw.id},'${currentUser.id}',${alreadyRsvpd})">
                             ${alreadyRsvpd ? "Joined" : "Join Photowalk"}
-                        </button>` : ""}
-                    ${isOwner ? `<button class="action-btn" onclick="deletePhotowalk(event,${pw.id},${locationId})">Cancel</button>` : ""}
+                        </button>
+                    ` : ""}
+
+                    ${isOwner ? `
+                        <button class="action-btn"
+                            onclick="deletePhotowalk(event,${pw.id},${locationId})">
+                            Cancel
+                        </button>
+                    ` : ""}
                 </div>
             </div>`;
     }
+
     listEl.innerHTML = html;
+}
+
+// ─── Share photowalk ───────────────────────────────────────
+async function sharePhotowalk(event, photowalkId, encodedTitle) {
+    event.stopPropagation();
+
+    const title = decodeURIComponent(encodedTitle);
+    const shareUrl = `${window.location.origin}${window.location.pathname}?photowalk=${photowalkId}`;
+
+    try {
+        if (navigator.share) {
+            await navigator.share({
+                title: `PhotoSpot — ${title}`,
+                text: `Join this Photowalk on PhotoSpot: ${title}`,
+                url: shareUrl
+            });
+        } else if (navigator.clipboard) {
+            await navigator.clipboard.writeText(shareUrl);
+            event.target.textContent = "Link Copied";
+            setTimeout(() => {
+                event.target.textContent = "Share Photowalk";
+            }, 1800);
+        } else {
+            window.prompt("Copy this Photowalk link:", shareUrl);
+        }
+    } catch (error) {
+        if (error.name !== "AbortError") {
+            console.error("Photowalk sharing failed:", error);
+        }
+    }
+}
+
+// ─── Open shared Photowalk link ────────────────────────────
+async function openSharedPhotowalk() {
+    const params = new URLSearchParams(window.location.search);
+    const photowalkId = params.get("photowalk");
+
+    if (!photowalkId) return;
+
+    try {
+        const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/photowalks?id=eq.${photowalkId}&select=location_id`,
+            {
+                headers: {
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": `Bearer ${SUPABASE_KEY}`
+                }
+            }
+        );
+
+        const data = await res.json();
+        if (!data.length) return;
+
+        const locationId = data[0].location_id;
+
+        const toggleEl = document.querySelector(
+            `.card-toggle[onclick*="${locationId}"]`
+        );
+
+        if (!toggleEl) return;
+
+        await togglePhotowalks(
+            { stopPropagation: () => {} },
+            locationId,
+            toggleEl
+        );
+
+        toggleEl.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+    } catch (error) {
+        console.error("Unable to open shared Photowalk:", error);
+    }
 }
 
 // ─── Check RSVP ───────────────────────────────────────────
@@ -448,23 +573,51 @@ async function signUp() {
 async function signIn() {
     const email = document.getElementById("authEmail").value;
     const password = document.getElementById("authPassword").value;
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
-        body: JSON.stringify({ email, password })
-    });
+
+    const res = await fetch(
+        `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "apikey": SUPABASE_KEY
+            },
+            body: JSON.stringify({ email, password })
+        }
+    );
+
     const data = await res.json();
+
     if (data.access_token) {
         localStorage.setItem("sb_token", data.access_token);
         localStorage.setItem("sb_user", JSON.stringify(data.user));
         localStorage.setItem("sb_refresh_token", data.refresh_token);
+
         closeAuth();
         updateAuthUI(data.user);
+
+        // Refresh any Photowalk sections that were already open
+        const openSections = document.querySelectorAll(".community:not(.hidden)");
+
+        for (const section of openSections) {
+            const locationId = section.id.replace("community-", "");
+            const toggleEl = section.previousElementSibling;
+
+            section.classList.add("hidden");
+
+            if (toggleEl) {
+                await togglePhotowalks(
+                    { stopPropagation: () => {} },
+                    locationId,
+                    toggleEl
+                );
+            }
+        }
     } else {
-        document.getElementById("authMessage").textContent = data.error_description || "Sign in failed.";
+        document.getElementById("authMessage").textContent =
+            data.error_description || "Sign in failed.";
     }
 }
-
 function updateAuthUI(user) {
     const btn = document.getElementById("heroAuthBtn");
     const savedBtn = document.getElementById("savedBtn");
@@ -679,13 +832,22 @@ async function refreshToken() {
 
 setInterval(refreshToken, 50 * 60 * 1000);
 
-window.addEventListener("load", () => {
+window.addEventListener("load", async () => {
     const user = localStorage.getItem("sb_user");
     if (user) updateAuthUI(JSON.parse(user));
-    fetchAllLocations().then(locations => {
-        document.getElementById("locationCount").textContent = `${locations.length}+ locations across India`;
-    });
+
+    const locations = await fetchAllLocations();
+
+    document.getElementById("locationCount").textContent =
+        `${locations.length}+ locations across India`;
+
     drawWatermark();
+
+    // Open a shared Photowalk if the URL contains ?photowalk=ID
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("photowalk")) {
+        showSelection().then(() => openSharedPhotowalk());
+    }
 });
 
 function drawWatermark() {
