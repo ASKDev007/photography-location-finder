@@ -754,6 +754,33 @@ body {
     margin-top: 2px;
 }
 
+.attendee-btn {
+    align-self: flex-start;
+    flex: initial;
+    margin-top: 5px;
+}
+
+.attendee-list {
+    margin-top: 8px;
+}
+
+.attendee-names {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.attendee-name {
+    font-size: 8px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #6b6558;
+    background: #f4f0e8;
+    border: 1px solid #d8d2c4;
+    border-radius: 2px;
+    padding: 4px 6px;
+}
+
 .host-form {
     display: flex;
     flex-direction: column;

@@ -40,6 +40,92 @@ async function fetchRSVPCount(photoWalkId) {
     return data.length;
 }
 
+async function fetchPhotowalkAttendees(photoWalkId) {
+    const token = localStorage.getItem("sb_token");
+    if (!token) return null;
+
+    const rsvpRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/photowalk_rsvps?photowalk_id=eq.${photoWalkId}&select=user_id`,
+        { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` } }
+    );
+    if (!rsvpRes.ok) return null;
+
+    const rsvps = await rsvpRes.json();
+    if (rsvps.length === 0) return { names: [], unnamedCount: 0 };
+
+    const userIds = [...new Set(rsvps.map(rsvp => rsvp.user_id))];
+    const params = new URLSearchParams({
+        select: "id,display_name",
+        id: `in.(${userIds.join(",")})`
+    });
+    const profilesRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?${params.toString()}`, {
+        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` }
+    });
+    if (!profilesRes.ok) return null;
+
+    const profiles = await profilesRes.json();
+    const namesById = new Map(profiles.map(profile => [profile.id, profile.display_name]));
+    const names = [];
+    let unnamedCount = 0;
+
+    rsvps.forEach(rsvp => {
+        const displayName = namesById.get(rsvp.user_id);
+        if (displayName) names.push(displayName);
+        else unnamedCount++;
+    });
+
+    return { names, unnamedCount };
+}
+
+async function renderPhotowalkAttendees(photoWalkId) {
+    const listEl = document.getElementById(`attendees-${photoWalkId}`);
+    if (!listEl) return;
+
+    listEl.innerHTML = `<p class="empty-sub">Loading attendees...</p>`;
+    const attendees = await fetchPhotowalkAttendees(photoWalkId);
+    if (!attendees) {
+        listEl.innerHTML = `<p class="empty-sub">Attendee names are unavailable right now.</p>`;
+        return;
+    }
+
+    const namesHtml = attendees.names.length
+        ? `<div class="attendee-names">${attendees.names.map(name => `<span class="attendee-name">${escapeHtml(name)}</span>`).join("")}</div>`
+        : "";
+    const unknownHtml = attendees.unnamedCount
+        ? `<p class="empty-sub">${attendees.unnamedCount} attendee${attendees.unnamedCount === 1 ? "" : "s"} has not chosen a public display name.</p>`
+        : "";
+
+    listEl.innerHTML = namesHtml || unknownHtml || `<p class="empty-sub">No attendees yet.</p>`;
+}
+
+async function togglePhotowalkAttendees(event, photoWalkId) {
+    event.stopPropagation();
+    const listEl = document.getElementById(`attendees-${photoWalkId}`);
+    const button = document.getElementById(`attendees-btn-${photoWalkId}`);
+    if (!listEl || !button) return;
+
+    const isOpen = !listEl.classList.contains("hidden");
+    if (isOpen) {
+        listEl.classList.add("hidden");
+        button.textContent = "View attendees";
+        return;
+    }
+
+    listEl.classList.remove("hidden");
+    button.textContent = "Hide attendees";
+    await renderPhotowalkAttendees(photoWalkId);
+}
+
+async function refreshPhotowalkAttendees(photoWalkId) {
+    const listEl = document.getElementById(`attendees-${photoWalkId}`);
+    if (listEl && !listEl.classList.contains("hidden")) {
+        await renderPhotowalkAttendees(photoWalkId);
+    }
+
+    const countEl = document.getElementById(`pw-count-${photoWalkId}`);
+    if (countEl) countEl.textContent = `${await fetchRSVPCount(photoWalkId)} attending`;
+}
+
 // ─── Render cards ──────────────────────────────────────────
 function renderCards(matchingLocations) {
     const safetyClass = (safety) => {
@@ -198,7 +284,10 @@ async function togglePhotowalks(event, locationId, toggleEl) {
                 <div class="pw-info">
                     <span class="pw-title">${pw.title}</span>
                     ${pw.theme ? `<span class="pw-theme">${pw.theme}</span>` : ""}
-                    <span class="pw-meta">${count} attending</span>
+                    <span class="pw-meta" id="pw-count-${pw.id}">${count} attending</span>
+                    ${currentUser ? `
+                        <button class="action-btn attendee-btn" id="attendees-btn-${pw.id}" onclick="togglePhotowalkAttendees(event,${pw.id})">View attendees</button>
+                        <div class="attendee-list hidden" id="attendees-${pw.id}"></div>` : ""}
                 </div>
                 <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
                     ${currentUser && !isOwner ? `
@@ -229,31 +318,36 @@ async function toggleRSVP(event, photoWalkId, userId, alreadyJoined) {
     event.stopPropagation();
     const token = localStorage.getItem("sb_token");
     if (!token) { openAuth(); return; }
+    if (!(await ensureProfileForPhotowalk())) return;
     const btn = event.target;
 
     if (alreadyJoined) {
-        await fetch(`${SUPABASE_URL}/rest/v1/photowalk_rsvps?photowalk_id=eq.${photoWalkId}&user_id=eq.${userId}`, {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/photowalk_rsvps?photowalk_id=eq.${photoWalkId}&user_id=eq.${userId}`, {
             method: "DELETE",
             headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` }
         });
+        if (!res.ok) { alert("Unable to leave this Photowalk. Please try again."); return; }
         btn.textContent = "Join Photowalk";
         btn.classList.remove("selected");
         btn.setAttribute("onclick", `toggleRSVP(event,${photoWalkId},'${userId}',false)`);
     } else {
-        await fetch(`${SUPABASE_URL}/rest/v1/photowalk_rsvps`, {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/photowalk_rsvps`, {
             method: "POST",
             headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` },
             body: JSON.stringify({ photowalk_id: photoWalkId, user_id: userId })
         });
+        if (!res.ok) { alert("Unable to join this Photowalk. Please try again."); return; }
         btn.textContent = "Joined";
         btn.classList.add("selected");
         btn.setAttribute("onclick", `toggleRSVP(event,${photoWalkId},'${userId}',true)`);
     }
+    await refreshPhotowalkAttendees(photoWalkId);
 }
 
 // ─── Open host form ───────────────────────────────────────
-function openHostForm(event, locationId) {
+async function openHostForm(event, locationId) {
     event.stopPropagation();
+    if (!(await ensureProfileForPhotowalk())) return;
     document.getElementById(`host-form-${locationId}`).classList.remove("hidden");
 }
 
@@ -333,15 +427,22 @@ function closeAuth() {
 }
 
 async function signUp() {
+    const displayName = document.getElementById("authDisplayName").value.trim();
     const email = document.getElementById("authEmail").value;
     const password = document.getElementById("authPassword").value;
+    if (displayName.length < 2 || displayName.length > 40) {
+        document.getElementById("authMessage").textContent = "Please choose a display name between 2 and 40 characters.";
+        return;
+    }
     const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password, data: { display_name: displayName } })
     });
     const data = await res.json();
-    document.getElementById("authMessage").textContent = data.user ? "Account created! You can now sign in." : (data.msg || "Something went wrong.");
+    document.getElementById("authMessage").textContent = data.user
+        ? "Account created! You can now sign in."
+        : (data.msg || data.error_description || data.message || data.error || "Something went wrong.");
 }
 
 async function signIn() {
@@ -385,6 +486,79 @@ function signOut() {
     localStorage.removeItem("sb_token");
     localStorage.removeItem("sb_user");
     updateAuthUI(null);
+}
+
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+    }[char]));
+}
+
+function openProfileSetup() {
+    document.getElementById("profileModal").classList.remove("hidden");
+}
+
+function closeProfileSetup() {
+    document.getElementById("profileModal").classList.add("hidden");
+    document.getElementById("profileMessage").textContent = "";
+}
+
+async function hasCurrentUserProfile() {
+    const token = localStorage.getItem("sb_token");
+    const user = localStorage.getItem("sb_user");
+    if (!token || !user) return;
+
+    const parsedUser = JSON.parse(user);
+    const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?select=id,display_name&id=eq.${parsedUser.id}`,
+        { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` } }
+    );
+
+    if (!res.ok) return null;
+    const profiles = await res.json();
+    return profiles.length > 0;
+}
+
+async function ensureProfileForPhotowalk() {
+    const hasProfile = await hasCurrentUserProfile();
+    if (hasProfile === false) {
+        openProfileSetup();
+        return false;
+    }
+    return true;
+}
+
+async function saveProfile() {
+    const token = localStorage.getItem("sb_token");
+    const user = localStorage.getItem("sb_user");
+    const input = document.getElementById("profileDisplayName");
+    const message = document.getElementById("profileMessage");
+    if (!token || !user || !input || !message) return;
+
+    const displayName = input.value.trim();
+    if (displayName.length < 2 || displayName.length > 40) {
+        message.textContent = "Use 2 to 40 characters.";
+        return;
+    }
+
+    const parsedUser = JSON.parse(user);
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ id: parsedUser.id, display_name: displayName })
+    });
+
+    if (res.ok) {
+        input.value = "";
+        message.textContent = "";
+        closeProfileSetup();
+    } else {
+        message.textContent = "We couldn't save that display name. Please try again.";
+    }
 }
 
 async function saveLocation(event, locationId) {
