@@ -228,6 +228,7 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
     gap: 20px;
+    align-items: start;
 }
 
 /* Card */
@@ -588,8 +589,9 @@ body {
     flex-wrap: wrap;
 }
 
-/* Removed diagonal decorative city-name background */
+/* Diagonal decorative city-name background retained */
 
+/* Search typography */
 .style-select {
     font-weight: 500;
 }
