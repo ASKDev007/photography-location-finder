@@ -789,3 +789,16 @@ body {
     color: #aaa89e;
     font-style: italic;
 }
+
+.auth-guest {
+    text-align: center;
+    font-size: 11px;
+    color: #aaa89e;
+    cursor: pointer;
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+}
+
+.auth-guest:hover {
+    color: #6b6558;
+}
