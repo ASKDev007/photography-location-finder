@@ -1491,9 +1491,12 @@ async function signUp() {
                     "apikey": SUPABASE_KEY
                 },
                 body: JSON.stringify({
-                    email,
-                    password
-                })
+    email,
+    password,
+    data: {
+        display_name: displayName
+    }
+})
             }
         );
 
