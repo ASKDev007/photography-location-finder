@@ -3,108 +3,381 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photography Location Finder — India</title>
+
+    <title>PhotoSpot — Photography Locations in India</title>
+
     <meta name="description" content="Discover the best photography locations across India. Curated spots in Mumbai, Delhi, Bangalore, Goa, Jaipur, Varanasi and more — sorted by style, light and time of day.">
     <meta name="keywords" content="photography locations India, best places to photograph Mumbai, photography spots Delhi, landscape photography India, street photography India, golden hour locations">
     <meta name="author" content="ASKDev007">
+
     <meta name="google-site-verification" content="uCYmfEJN5nx7I0LfnSJoMnbdZpAOIcNOVkbRsTIHryA" />
-    <meta property="og:title" content="Photography Location Finder — India">
+
+    <meta property="og:title" content="PhotoSpot — Photography Locations in India">
     <meta property="og:description" content="Discover curated photography locations across India sorted by style, light and feel.">
     <meta property="og:url" content="https://photography-location-finder.vercel.app">
     <meta property="og:type" content="website">
+
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Photography Location Finder — India">
+    <meta name="twitter:title" content="PhotoSpot — Photography Locations in India">
     <meta name="twitter:description" content="Discover curated photography locations across India sorted by style, light and feel.">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet"
+    >
+
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
+    <!-- =====================================================
+         PhotoSpot Navigation
+         ===================================================== -->
+    <nav class="site-nav" aria-label="Main navigation">
+
+        <div class="site-nav-inner">
+
+            <a
+                href="#"
+                class="site-brand"
+                aria-label="PhotoSpot home"
+            >
+                PhotoSpot
+            </a>
+
+            <div class="site-nav-links">
+
+                <button
+                    class="nav-link nav-signin"
+                    id="heroAuthBtn"
+                    onclick="openAuth()"
+                >
+                    Sign In
+                </button>
+
+                <button
+                    class="nav-link hidden"
+                    id="savedBtn"
+                    onclick="showSavedLocations()"
+                >
+                    My Locations
+                </button>
+
+                <button
+                    class="nav-link hidden"
+                    id="itineraryNavBtn"
+                    onclick="showItineraries()"
+                >
+                    My Itineraries
+                </button>
+
+            </div>
+
+        </div>
+
+    </nav>
+
+
+    <!-- =====================================================
+         Authentication Modal
+         ===================================================== -->
     <div class="auth-modal hidden" id="authModal">
+
         <div class="auth-box">
-            <button class="auth-close" onclick="closeAuth()">✕</button>
-            <h2 class="auth-title">Join the community</h2>
-            <p class="auth-subtitle">Save your favourite locations.</p>
-            <input class="auth-input" type="text" id="authDisplayName" placeholder="Display name (for new accounts)" maxlength="40" autocomplete="nickname">
-            <input class="auth-input" type="email" id="authEmail" placeholder="Email">
-            <input class="auth-input" type="password" id="authPassword" placeholder="Password">
-            <button class="auth-btn" onclick="signUp()">Sign Up</button>
-            <button class="auth-btn secondary" onclick="signIn()">Sign In</button>
-            <p class="auth-guest" onclick="closeAuth()">Continue as Guest</p>
-            <p class="auth-message" id="authMessage"></p>
+
+            <button
+                class="auth-close"
+                onclick="closeAuth()"
+                aria-label="Close authentication window"
+            >
+                ✕
+            </button>
+
+            <h2 class="auth-title">
+                Join the community
+            </h2>
+
+            <p class="auth-subtitle">
+                Save your favourite locations.
+            </p>
+
+            <input
+                class="auth-input"
+                type="text"
+                id="authDisplayName"
+                placeholder="Display name (for new accounts)"
+                maxlength="40"
+                autocomplete="nickname"
+            >
+
+            <input
+                class="auth-input"
+                type="email"
+                id="authEmail"
+                placeholder="Email"
+                autocomplete="email"
+            >
+
+            <input
+                class="auth-input"
+                type="password"
+                id="authPassword"
+                placeholder="Password"
+                autocomplete="current-password"
+            >
+
+            <button
+                class="auth-btn"
+                onclick="signUp()"
+            >
+                Sign Up
+            </button>
+
+            <button
+                class="auth-btn secondary"
+                onclick="signIn()"
+            >
+                Sign In
+            </button>
+
+            <p
+                class="auth-guest"
+                onclick="closeAuth()"
+            >
+                Continue as Guest
+            </p>
+
+            <p
+                class="auth-message"
+                id="authMessage"
+            ></p>
+
         </div>
+
     </div>
 
+
+    <!-- =====================================================
+         Profile Setup Modal
+         ===================================================== -->
     <div class="auth-modal hidden" id="profileModal">
+
         <div class="auth-box">
-            <button class="auth-close" onclick="closeProfileSetup()">✕</button>
-            <h2 class="auth-title">Choose a display name</h2>
-            <p class="auth-subtitle">This name is visible to Photowalk attendees, never your email address.</p>
-            <input class="auth-input" type="text" id="profileDisplayName" placeholder="Your display name" maxlength="40" autocomplete="nickname">
-            <button class="auth-btn" onclick="saveProfile()">Save name</button>
-            <p class="auth-message" id="profileMessage"></p>
+
+            <button
+                class="auth-close"
+                onclick="closeProfileSetup()"
+                aria-label="Close profile setup"
+            >
+                ✕
+            </button>
+
+            <h2 class="auth-title">
+                Choose a display name
+            </h2>
+
+            <p class="auth-subtitle">
+                This name is visible to Photowalk attendees, never your email address.
+            </p>
+
+            <input
+                class="auth-input"
+                type="text"
+                id="profileDisplayName"
+                placeholder="Your display name"
+                maxlength="40"
+                autocomplete="nickname"
+            >
+
+            <button
+                class="auth-btn"
+                onclick="saveProfile()"
+            >
+                Save Name
+            </button>
+
+            <p
+                class="auth-message"
+                id="profileMessage"
+            ></p>
+
         </div>
+
     </div>
 
+
+    <!-- =====================================================
+         Itinerary Picker Modal
+         ===================================================== -->
     <div class="auth-modal hidden" id="itineraryPickerModal">
+
         <div class="auth-box">
-            <button class="auth-close" onclick="closeItineraryPicker()">✕</button>
-            <h2 class="auth-title">Add to Trip</h2>
-            <p class="auth-subtitle">Choose an existing trip or create a new one.</p>
+
+            <button
+                class="auth-close"
+                onclick="closeItineraryPicker()"
+                aria-label="Close trip picker"
+            >
+                ✕
+            </button>
+
+            <h2 class="auth-title">
+                Add to Trip
+            </h2>
+
+            <p class="auth-subtitle">
+                Choose an existing trip or create a new one.
+            </p>
+
             <div id="itineraryPickerList"></div>
-            <input class="auth-input" type="text" id="newTripNameInline" placeholder="New trip name">
-            <button class="auth-btn" onclick="createItineraryAndAdd()">Create & Add</button>
+
+            <input
+                class="auth-input"
+                type="text"
+                id="newTripNameInline"
+                placeholder="New trip name"
+            >
+
+            <button
+                class="auth-btn"
+                onclick="createItineraryAndAdd()"
+            >
+                Create &amp; Add
+            </button>
+
         </div>
+
     </div>
-    
+
+
+    <!-- =====================================================
+         Hero
+         ===================================================== -->
     <section class="hero">
-        <p class="hero-eyebrow">Photography Guide — India</p>
-        <h1 class="hero-title">Every frame starts<br>with a <em>place.</em></h1>
-        <p class="hero-subtitle">Curated locations for photographers — sorted by style, light, and feel.</p>
-        <p class="hero-location-count" id="locationCount"></p>
-        <div class="hero-actions">
-            <button class="hero-auth-btn" onclick="openAuth()" id="heroAuthBtn">Sign In</button>
-            <button class="hero-auth-btn hidden" id="savedBtn" onclick="showSavedLocations()">My Locations</button>
-            <button class="hero-auth-btn hidden" id="itineraryNavBtn" onclick="showItineraries()">My Itineraries</button>
+
+        <div class="hero-copy">
+
+            <p class="hero-eyebrow">
+                PhotoSpot — Photography Guide
+            </p>
+
+            <h1 class="hero-title">
+                Every frame starts<br>
+                with a <em>place.</em>
+            </h1>
+
+            <p class="hero-subtitle">
+                Curated locations for photographers — sorted by style, light, and feel.
+            </p>
+
+            <p
+                class="hero-location-count"
+                id="locationCount"
+            ></p>
+
         </div>
+
+        <div class="hero-visual" aria-hidden="true">
+            <img
+                id="heroImage"
+                class="hero-image"
+                src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1600&q=85"
+                alt=""
+            >
+        </div>
+
     </section>
 
-    
+
+    <!-- =====================================================
+         Search
+         ===================================================== -->
     <section class="search-section">
-        <div class="search-strip" id="filterStrip">
-            <select class="style-select" id="styleSelect">
+
+        <div
+            class="search-strip"
+            id="filterStrip"
+        >
+
+            <select
+                class="style-select"
+                id="styleSelect"
+                aria-label="Photography style"
+            >
                 <option value="">Photography Styles</option>
                 <option>Street Photography</option>
                 <option>Landscape Photography</option>
                 <option>Portrait Photography</option>
                 <option>Architecture Photography</option>
             </select>
+
             <div class="search-divider"></div>
+
             <input
                 class="search-input"
                 type="text"
                 id="searchInput"
-                placeholder="Mumbai, Pune, Delhi, Bangalore, Chennai, Hyderabad, Kochi, Goa, Jaipur, Varanasi, Mysore, Hampi..."
+                placeholder="Search by city, e.g. Mumbai, Goa, Jaipur..."
+                aria-label="Search locations by city"
             >
-            <button class="clear-btn" onclick="clearSearch()">Clear</button>
-            <button class="search-btn" onclick="showSelection()">Search</button>
+
+            <button
+                class="clear-btn"
+                onclick="clearSearch()"
+            >
+                Clear
+            </button>
+
+            <button
+                class="search-btn"
+                onclick="showSelection()"
+            >
+                Search
+            </button>
+
         </div>
+
     </section>
 
+
+    <!-- =====================================================
+         Results
+         ===================================================== -->
     <section class="results-section">
+
         <div id="results"></div>
+
     </section>
+
 
     <script src="script.js"></script>
 
-    <footer class="site-footer">
-    <div class="footer-brand">PhotoSpot</div>
-    <div class="footer-tagline">Photography locations across India</div>
-    <div class="footer-copyright">© 2026 PhotoSpot. All rights reserved.</div>
-</footer>
+
+    <!-- =====================================================
+         Footer / About
+         ===================================================== -->
+    <footer
+        class="site-footer"
+        id="about"
+    >
+
+        <div class="footer-brand">
+            PhotoSpot
+        </div>
+
+        <div class="footer-tagline">
+            Photography locations across India
+        </div>
+
+        <div class="footer-copyright">
+            © 2026 PhotoSpot. All rights reserved.
+        </div>
+
+    </footer>
 
 </body>
 </html>
